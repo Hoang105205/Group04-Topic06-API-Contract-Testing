@@ -8,24 +8,6 @@
   },
   "item": [
     {
-      "name": "api/product",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/api/products",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "products"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
       "name": "api/auth/login",
       "request": {
         "method": "POST",
@@ -48,6 +30,24 @@
             "api",
             "auth",
             "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "api/product",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/products",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "products"
           ]
         }
       },
