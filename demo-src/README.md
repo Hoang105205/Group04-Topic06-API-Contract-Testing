@@ -16,6 +16,12 @@ npm start
 
 > **Tip:** Use `npm run dev` for hot-reload during development (requires nodemon).
 
+### Postman Setup
+4. Open Postman → **File → Import** → select `postman/Activity_Collection.json`
+5. **File → Import** again → select `postman/Activity_Environment.json`
+6. Top-right dropdown → select **"Activity Env"** environment
+7. Start testing!
+
 ---
 
 ## Endpoints

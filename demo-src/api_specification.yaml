@@ -117,7 +117,7 @@ components:
           example: 1999.98
         discount:
           type: number
-          example: 399.996
+          example: 400.00
         coupon_applied:
           type: string
           nullable: true
