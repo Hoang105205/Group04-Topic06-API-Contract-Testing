@@ -2,6 +2,52 @@
 
 ## Section 1: Introduction
 
+### What is API Testing?
+
+API (Application Programming Interface) testing validates that the communication layer between software components works correctly — checking whether endpoints return the right data, handle errors properly, enforce authentication, and behave consistently under different inputs. Unlike UI testing, API testing operates directly on the request/response layer, making it faster, more reliable, and easier to automate.
+
+### Why Postman?
+
+**Postman** is the industry-standard tool for API testing, used by over 35 million developers worldwide. It provides an intuitive graphical interface for building, sending, and inspecting HTTP requests — without writing boilerplate code. Key features include:
+
+- **Request Builder:** Compose GET, POST, PUT, DELETE requests with headers, parameters, and body — all through a visual interface.
+- **Test Scripts:** Write JavaScript assertions (`pm.test()`) to validate status codes, response bodies, headers, and performance.
+- **Collection Runner:** Execute an entire workflow (e.g., Login → Browse Products → Add to Cart → Checkout) in one click.
+- **Newman CLI:** Run collections from the command line for automation and CI/CD pipeline integration.
+- **Environment Variables:** Manage dynamic values (base URLs, tokens, credentials) across different setups.
+
+### Why Postbot?
+
+**Postbot** is Postman's built-in AI assistant (GA since 2024). It analyzes your request/response and automatically generates test assertions in JavaScript — reducing the effort of writing repetitive validation code. You can interact with Postbot through natural language prompts (e.g., *"Generate tests for status code and validate that each product has a positive price"*). Postbot is included in every Postman account at **50 AI credits per month** on the Free plan — sufficient for student and individual use.
+
+### Tool Selection Context
+
+This guide is part of a **Tool Survey** conducted for the Software Testing seminar. Three candidate tools were evaluated:
+
+| Tool | Role | Verdict |
+|------|------|---------|
+| **Postman** | Traditional API testing tool | **Selected** — industry standard, low learning curve, excellent fit for e-commerce API flows |
+| **Postbot** | AI-augmented test generation | **Selected** — rapidly generates assertions for complex JSON payloads, complements Postman |
+| **Pact** | Contract testing (backup) | Not used in this seminar — designed for microservices; overkill for the monolithic EShop SUT |
+
+The combination of **Postman + Postbot** was chosen because it eliminates framework complexity while providing both manual control and AI-assisted speed.
+
+### Scope of This Guide
+
+This guide focuses on three core capabilities:
+
+1. **Test Scripts** — Writing JavaScript assertions to validate API responses (status codes, body structure, data types, response time).
+2. **Collection Runner + Newman** — Automating end-to-end API workflows and running tests from the command line.
+3. **Postbot (AI-augmented)** — Using Postman's AI assistant to generate test assertions, and understanding its strengths and limitations.
+
+Additional features (Mock Servers, Monitors, Postman Flows, OpenAPI Import) are mentioned briefly in Section 5 but are not the primary focus.
+
+### Target System
+
+All examples in this guide use the **EShop SUT** (System Under Test) — a Node.js/Express e-commerce API provided for the course. The backend runs at `http://localhost:3000` and exposes endpoints for authentication, products, cart, checkout, coupons, and order management.
+
+> **Note:** The EShop SUT contains intentional implementation gaps for learning purposes. This guide focuses on **how to use Postman and Postbot effectively**, not on finding bugs in the SUT.
+
 ---
 
 ## Section 2: Install & Setup
