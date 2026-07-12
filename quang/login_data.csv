@@ -1,0 +1,6 @@
+username,password,expected_status
+alice,password123,200
+bob,password456,200
+alice,wrong_password,401
+(empty),password123,400
+charlie,(empty),400
