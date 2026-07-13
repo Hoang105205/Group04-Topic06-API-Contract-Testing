@@ -177,6 +177,84 @@ To verify that the setup is successful and the environment variables are active:
 
 ## Section 4: API Authentication Testing Patterns
 
+This section demonstrates how Postman handles authentication — specifically **JWT Bearer Token**, which is the auth mechanism used by the EShop SUT. You will learn how to configure auth at the Collection level, test auth failure scenarios, and automate token management with scripts.
+
+### 4.1 — Collections and Auth Inheritance
+
+In Postman, a **Collection** is a group of related API requests. Collections can contain **sub-folders** to organize requests by feature (e.g., "Auth", "Products", "Cart").
+
+A key feature is **inheritance**: authorization settings applied at the Collection or folder level are automatically inherited by all child requests. This means you configure auth **once** at the top level, and every request inside automatically uses it — no need to set headers manually per request.
+
+> **Watch the video below** to see how Collections, folders, and auth inheritance work in Postman.
+
+<video width="100%" controls>
+  <source src="hoang/Hoang_postman_vid_01.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+### 4.2 — Testing Authentication with Bearer Token
+
+The EShop SUT uses **JWT Bearer Token** authentication. After logging in, the server returns a token that must be included in the `Authorization` header of subsequent requests:
+
+```
+Authorization: Bearer <token>
+```
+
+In Postman, you configure this at the **Collection level**:
+1. Select your Collection → click the **Authorization** tab
+2. Set **Type** to `Bearer Token`
+3. Enter `{{auth_token}}` as the Token value (referencing the environment variable)
+
+All child requests now automatically include this header.
+
+#### Testing Auth Failure Scenarios
+
+A critical part of auth testing is verifying that the API **rejects** unauthorized requests. Here are two common test cases:
+
+| Test Case | Setup | Expected Result |
+|-----------|-------|----------------|
+| **No token** | Remove the Bearer token (set Authorization to "No Auth") | `401 Unauthorized` |
+| **Fake/invalid token** | Enter a random string as the token | `403 Forbidden` |
+
+> **Watch the video below** to see how to run a request and test both auth failure scenarios in Postman.
+
+<video width="100%" controls>
+  <source src="hoang/Hoang_postman_vid_02.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video> 
+
+> *Video 2*: Running GET /api/users/me with Bearer Token auth, then testing no-token (401) and fake-token (403) scenarios.
+
+### 4.3 — Auto-Save Token with Post-Response Script
+
+When testing authenticated APIs, you typically need to:
+1. Send a login request → receive a token
+2. **Copy** the token → **paste** it into the environment variable
+3. Use the variable in subsequent requests
+
+Manually copying the token every time is tedious and error-prone. Postman solves this with **post-response scripts** — JavaScript code that runs automatically after a request completes.
+
+By adding a short script to the login request's **Post-response** tab, the token is automatically extracted from the response and saved to the `{{auth_token}}` environment variable:
+
+```javascript
+const responseData = pm.response.json();
+
+if (pm.response.code === 200 && responseData.token) {
+    pm.environment.set("auth_token", responseData.token);
+    console.log("auth_token saved to environment");
+}
+```
+
+After running the login request once, `{{auth_token}}` is automatically populated — all subsequent requests using `Authorization: Bearer {{auth_token}}` work immediately without any manual copy-paste.
+
+> **Watch the video below** to see the problem (manual token copy) and the solution (post-response script) in action.
+
+<video width="100%" controls>
+  <source src="hoang/Hoang_postman_vid_03.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video> 
+
+> *Video 3: Demonstrating the manual token copy problem, then introducing the post-response script that automatically overrides the `auth_token` variable after login.*
 
 ---
 
