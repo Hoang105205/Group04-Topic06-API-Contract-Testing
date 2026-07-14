@@ -262,9 +262,211 @@ After running the login request once, `{{auth_token}}` is automatically populate
 
 ### 5.1a — Test Scripts
 
+### Test Scripts in Postman
+API testing requires more than just checking if a request returns a `200 OK` status. Postman allows testers to write JavaScript code to automate data preparation and validate complex API behaviors. 
+
+Think of these scripts as the automated logic surrounding your API calls. They are divided into two distinct execution phases:
+1. **Pre-request Scripts:** Code that executes *before* the HTTP request is sent to the server.
+2. **Post-response Scripts (Tests):** Code that executes *after* the HTTP response is received from the server.
+
+### How to Navigate to the Scripts Interface
+Before diving into the code, here is how you can locate the scripting workspace in Postman:
+1. Open any API request in your Collection.
+2. Look at the tab menu directly below the URL bar and click on the **Scripts** tab.
+   ![alt text](User_Guide_image/postman_scripts_1.png)
+3. Inside the Scripts tab, you will see two sub-tabs: **Pre-request** and **Post-response**. Select the appropriate tab based on when you want your code to run.
+   ![alt text](User_Guide_image/postman_scripts_2.png)
+4. Write your JavaScript code in the editor below and click **Save** (or press `Ctrl + S`).
+
+#### 1. Pre-request Scripts (Dynamic Data Preparation)
+These scripts run before the request is sent to prepare the environment and payload. This is primarily used to prevent data collisions, such as dynamically generating a unique email for each test run to avoid "User already exists" errors.
+
+If we were testing a registration endpoint, we could use this setup phase to generate a dynamic email to ensure a clean test run every time:
+```javascript
+pm.environment.set("timestamp", Date.now());
+const randomEmail = `user_${Math.floor(Math.random() * 10000)}@test.com`;
+pm.environment.set("test_email", randomEmail);
+```
+
+#### 2. Post-response Scripts (Assertions & Variable Chaining)
+Once the server replies, you need to verify if the data is correct or extract specific values to use in future requests. This is handled in the Post-response tab (historically called "Tests" in older Postman versions).
+
+**Variable Chaining:** Instead of manually copying authentication tokens from one response to another, we can extract the token from a Login response and store it dynamically for future use.<br>
+For example, capturing the token from the `POST {{base_url}}/api/auth/login` response to automatically update your `{{auth_token}}` environment variable.
+
+```javascript
+const responseData = pm.response.json();
+
+pm.test("Save Auth Token and User ID", function () {
+    pm.environment.set("auth_token", responseData.token);
+    pm.environment.set("user_id", responseData.user.id);
+});
+```
+
+**Data Validation:** Beyond extracting variables, Post-response scripts are crucial for validating the structure and performance of the returned data. We achieve this using the built-in Chai.js assertion library inside the `pm.expect()` block.<br>
+For example, here is how you assert the schema and response time for the `GET {{base_url}}/api/products` endpoint.
+
+```javascript
+pm.test("Response time is acceptable (< 800ms)", function () {
+    pm.expect(pm.response.responseTime).to.be.below(800);
+});
+
+pm.test("Validate Product Schema and Data Types", function () {
+    const products = pm.response.json();
+    pm.expect(products).to.be.an('array').that.is.not.empty;
+    
+    // Validate the exact data types of the first product
+    const firstProduct = products[0];
+    pm.expect(firstProduct).to.have.property('id').that.is.a('number');
+    pm.expect(firstProduct.price).to.be.a('number').and.to.be.above(0);
+});
+```
+
+#### 3. Viewing Test Results
+After you click **Send**, Postman executes your Post-response scripts and evaluates every `pm.test()` block. You can view the outcome by looking at the lower half of the Postman interface and clicking on the Test Results tab.
+
+The string you provide in the `pm.test("Name", ...)` function becomes the visual label for your test.
+- **When a test passes:** If all `pm.expect()` conditions inside the block evaluate to true, Postman flags it with a green **PASS** badge.
+- **When a test fails:** If even a single assertion fails, the entire block gets a red **FAIL** badge, and Postman prints an error message explaining exactly what went wrong.
+
+Using the `GET /api/products` script above as an example, and to see exactly how Postman reports these outcomes, let's intentionally force a failure. We will keep our schema validation intact, but we will change our response time assertion to expect an impossibly fast < 1ms return time:
+
+```javascript
+pm.test("Response time is acceptable (< 1ms)", function () {
+    pm.expect(pm.response.responseTime).to.be.below(1);
+});
+
+pm.test("Validate Product Schema and Data Types", function () {
+    const products = pm.response.json();
+    pm.expect(products).to.be.an('array').that.is.not.empty;
+    
+    // Validate the exact data types of the first product
+    const firstProduct = products[0];
+    pm.expect(firstProduct).to.have.property('id').that.is.a('number');
+    pm.expect(firstProduct.price).to.be.a('number').and.to.be.above(0);
+});
+```
+
+When you run this script, Postman provides immediate visual feedback:
+- The `Validate Product Schema` test evaluates to true, so Postman flags it with a green PASS badge.
+- Since the API cannot return data in under 1 millisecond, the `Response time` test gets a red FAIL badge. Furthermore, Postman prints the exact `AssertionError` (e.g., expected 5 to be below 1) to help you debug what went wrong.
+
+![alt text](User_Guide_image/postman_test_script_result.png)
+
+This immediate visual feedback is what makes Postman scripts so powerful. Instead of manually reading the JSON response every time, you rely on the Test Results tab to confidently confirm that the API contract is intact.
+
+#### 4. Quick Reference: Common Postman Commands
+To help you write and understand scripts faster, here is a cheat sheet of the most frequently used Postman commands and Chai.js assertions:
+
+| Command / Assertion | Description |
+| :--- | :--- |
+| `pm.environment.set("key", value)` | Creates or updates a variable in your active Environment. Useful for variable chaining. |
+| `pm.environment.get("key")` | Retrieves the value of an existing Environment variable. |
+| `pm.response.json()` | Parses the raw response body into a readable JavaScript object/array. |
+| `pm.test("Name", function() {...})` | Wraps your validation logic. The "Name" will appear in your Postman test result reports. |
+| `pm.response.to.have.status(200)` | A quick assertion to verify the HTTP status code returned by the server. |
+| `pm.expect(A).to.eql(B)` | Asserts that value A is strictly equal to value B. |
+| `pm.expect(obj).to.have.property('id')` | Validates that a specific key (e.g., 'id') exists within a JSON object. |
+| `pm.expect(obj.id).to.be.a('number')` | Checks the exact data type of a value (can be `'number'`, `'string'`, `'boolean'`). |
+| `pm.expect(arr).to.be.an('array').that.is.not.empty` | Ensures the returned data is an array and contains at least one item. |
+| `pm.expect(time).to.be.below(800)` | Asserts that a numeric value is less than a specified target (great for performance testing). |
 
 ### 5.1b — Negative Testing & Error Handling
 
+Happy-path testing (verifying that valid inputs yield successful outputs) only covers a fraction of your API's contract. Negative Testing involves intentionally sending invalid, malformed, or unauthorized data to see how the system reacts.
+
+As an API tester, your primary goal in this phase is to ensure the server handles bad data gracefully. The API must catch the invalid input and return standard, predictable client error codes (4xx series) rather than crashing or exposing backend logic (500 Internal Server Error).
+
+**Best Practice:** Always organize your negative tests in a dedicated folder (e.g., "Negative Tests") within your Postman collection. This separates your test logic and makes your automated test reports much easier to analyze.
+
+To understand how to approach negative testing, let's explore the most common edge cases you need to cover. We will use EShop as a running example to demonstrate how these tests are written in Postman:
+
+#### 1. Unauthorized Access
+Secure endpoints must actively reject unauthenticated requests. 
+
+If you attempt to access protected resources like `GET {{base_url}}/api/products` without providing a valid `{{auth_token}}` credential, the server must block the request.  
+
+```javascript
+pm.test("Unauthorized access returns 401", function () {
+    pm.response.to.have.status(401);
+});
+```
+
+#### 2. Missing Required Fields
+APIs must validate structural integrity before processing logic. 
+
+The `POST {{base_url}}/api/cart` endpoint strictly requires a `user_id`, `product_id`, and `quantity`. If a client omits any mandatory field, the server must catch it and return a standard `400 Bad Request`.  
+
+```javascript
+pm.test("Missing product_id returns 400 with an error message", function () {
+    pm.response.to.have.status(400);
+    pm.expect(pm.response.json()).to.have.property('error').that.is.a('string');
+});
+```
+
+#### 3. Boundary Values & Business Logic
+These are critical scenarios that basic automated tools often miss. For our EShop example, this includes:
+- **Invalid Quantities:** Submitting `POST {{base_url}}/api/cart` with a `quantity` of 0 or lower.  
+- **Invalid States:** Submitting `POST {{base_url}}/api/coupon/redeem` with a fabricated or expired code instead of the valid "SAVE20".  
+
+```javascript
+pm.test("Zero quantity is rejected by validation (Status 400)", function () {
+    pm.response.to.have.status(400);
+});
+```
+
+#### 4. JSON Schema Validation for Errors
+Manually validating individual fields in an error response can be tedious. Instead, use Postman's built-in JSON Schema validator (Ajv). You can define a strict "Error Contract" (e.g., RFC 7807) and validate the entire error payload in a single line of code. This ensures your API never returns undocumented error formats.
+
+When triggering a validation error in the Cart API, we use a JSON schema to guarantee the error response always contains exactly three fields: `error_code`, `message`, and `timestamp`.
+```javascript
+const errorSchema = {
+    "type": "object",
+    "required": ["error_code", "message", "timestamp"],
+    "properties": {
+        "error_code": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+    },
+    "additionalProperties": false // Fails if the server leaks extra data
+};
+
+pm.test("Error response strictly matches the Error JSON Schema", function () {
+    pm.response.to.have.jsonSchema(errorSchema);
+});
+```
+
+#### 5. Rate Limiting Validation (Status 429)
+A robust API must protect itself from brute-force attacks or spam by implementing rate limits. Negative testing should verify that if a client sends too many requests in a short window, the server gracefully intercepts them and returns a 429 Too Many Requests status, along with a Retry-After header.
+
+Using the Postman Collection Runner (which is covered in `Section 5.2`), we can loop the `POST /api/auth/login` request 50 times with zero delay. We then write a script to assert that the server eventually stops returning `401s (Invalid Credentials)` and starts returning 429s to prevent spam.
+
+```javascript
+pm.test("API throttles spam requests with 429 Too Many Requests", function () {
+    pm.expect(pm.response.code).to.be.oneOf([400, 401, 429]);
+    
+    if (pm.response.code === 429) {
+        pm.expect(pm.response.headers.has('Retry-After')).to.be.true;
+    }
+});
+```
+
+#### 6. Dynamic Error Handling (Conditional Workflows)
+How does your automated test suite handle an unexpected error? Instead of letting the Collection Runner blindly execute downstream requests that will inevitably fail (e.g., trying to add to a cart without a token), Postman allows you to dynamically control the execution flow using `postman.setNextRequest()`.
+
+If the `POST /api/auth/login` request fails (e.g., the test server is down or credentials changed), we instruct Postman to immediately halt the test suite rather than wasting time executing the Products and Cart endpoints.
+
+```javascript
+pm.test("Login must be successful to continue workflow", function () {
+    if (pm.response.code !== 200) {
+        console.error("Login failed! Halting the automation suite.");
+        // Passing 'null' stops the Collection Runner completely
+        postman.setNextRequest(null); 
+    } else {
+        pm.expect(pm.response.code).to.eql(200);
+    }
+});
+```
 
 ### 5.2 — Collection Runner & Newman CLI
 
