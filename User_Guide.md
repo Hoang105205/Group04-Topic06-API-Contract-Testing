@@ -258,6 +258,28 @@ After running the login request once, `{{auth_token}}` is automatically populate
 
 ---
 
+## Section 4b: Contract Testing with Postman
+
+> **Author:** Thuận | **Reference:** `DEEP_RESEARCH_Contract_Testing_Postman.md`
+
+### What is Contract Testing?
+
+*[Thuận: Write 2-3 paragraphs explaining contract testing — what it is, why it matters, how it differs from schema validation. Reference the research report Section 1.]*
+
+### How Postman Implements Contract Testing
+
+*[Thuận: Explain Postman's built-in features — JSON Schema validation via `pm.response.to.have.jsonSchema()`, response structure assertions, Mock Servers. Reference the research report Section 2.]*
+
+### Examples from EShop SUT
+
+*[Thuận: Show JSON Schema examples for EShop SUT endpoints (products, cart, orders). Include code snippets for post-response scripts. Reference the research report Section 3.]*
+
+### Comparison: Postman vs. Dedicated Contract Testing Tools
+
+*[Thuận: Add a comparison table (Postman vs. Pact) explaining when to use each. Reference the research report Section 4.]*
+
+---
+
 ## Section 5: Advanced Usage
 
 ### 5.1a — Test Scripts
