@@ -589,6 +589,144 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
 
 ## Section 7: Troubleshooting
 
+This section covers the most common errors you will encounter when working with Postman, Postbot, and Newman — along with their causes and solutions.
+
+### 7.1 — `ECONNREFUSED` — Cannot Connect to Server
+
+**Symptom:** When sending a request, Postman (or Newman) returns an error similar to:
+```
+Error: connect ECONNREFUSED 127.0.0.1:3000
+```
+
+**Cause:** The target server (e.g., EShop SUT) is not running, or the `base_url` environment variable points to the wrong host/port.
+
+**Solution:**
+1. Verify that the EShop SUT server is running.
+2. Check your Environment variables — ensure `base_url` is set correctly (e.g., `http://localhost:3000`).
+3. Confirm the port number matches the server's actual listening port (check the server's terminal output for messages like `Server running on port 3000`).
+4. If the server runs on a different machine or inside a Docker container, replace `localhost` with the correct hostname or IP address.
+
+---
+
+### 7.2 — `{{auth_token}}` is Undefined — Variable Not Set
+
+**Symptom:** Requests to protected endpoints fail with `401 Unauthorized`, and hovering over `{{auth_token}}` in Postman shows it as **unresolved** or **undefined**.
+
+**Cause:** The authentication token was never saved to the environment. This typically happens when:
+- You forgot to run the Login request before accessing protected endpoints.
+- The Login request's Post-response script that saves the token is missing or has a bug.
+- You ran requests out of order in the Collection Runner (e.g., skipped the Login step).
+
+**Solution:**
+1. **Run the Login request first.** Ensure `POST /api/login` is executed before any request that requires authentication.
+2. **Verify the Post-response script** on the Login request saves the token correctly:
+   ```javascript
+   const responseData = pm.response.json();
+   if (pm.response.code === 200 && responseData.token) {
+       pm.environment.set("auth_token", responseData.token);
+   }
+   ```
+3. **Check the Environment** — after running Login, click the "eye" icon (Environment Quick Look) in the top-right corner to confirm that `auth_token` has a **Current Value**.
+4. **In Collection Runner**, ensure the Login request is positioned at the top of the execution order so it runs first.
+
+---
+
+### 7.3 — Postbot Does Not Show the "Ask Postbot" Button
+
+**Symptom:** You open the Scripts (Tests) tab on a request, but the Postbot option or "Ask Postbot" button is not visible.
+
+**Cause:** Postbot requires a **response sample** to generate test assertions — it analyzes the actual response body to produce relevant tests. If you have not sent the request yet, Postbot has no data to work with. Additionally, your AI credits may be exhausted.
+
+**Solution:**
+1. **Send the request first** — click **Send** to execute the request and receive a response. Once the response appears, Postbot's option should become available.
+2. **Check your AI credits** — go to your Postman account settings or the billing page to verify that you still have available AI credits. The Free plan provides **50 credits/month**; each Postbot generation consumes approximately 1 credit.
+3. **Ensure you are signed in** — Postbot requires an authenticated Postman account. If you are using Postman without signing in, Postbot features will not be available.
+
+---
+
+### 7.4 — Newman Reports `collection could not be loaded` or `collection not found`
+
+**Symptom:** Running Newman from the command line produces an error like:
+```
+error: collection could not be loaded
+  unable to read data from file "EShop_API_Collection.json"
+```
+
+**Cause:** The file path to the exported Collection JSON is incorrect, the file does not exist at the specified location, or you forgot to export the Collection from Postman.
+
+**Solution:**
+1. **Verify the file path** — ensure the `.json` file exists in the directory where you are running the Newman command. Use `ls` (macOS/Linux) or `dir` (Windows) to list files:
+   ```bash
+   # macOS/Linux
+   ls -la *.json
+
+   # Windows (PowerShell)
+   dir *.json
+   ```
+2. **Use the correct file name** — double-check for typos in the file name (case-sensitive on macOS/Linux).
+3. **Export the Collection** if you have not already:
+   - In Postman, click the ellipsis (`...`) next to your Collection → **Export** → save as `.json`.
+4. **Use absolute paths** if the file is in a different directory:
+   ```bash
+   newman run "C:/Users/admin/exports/EShop_API_Collection.json" -e "C:/Users/admin/exports/EShop_Environment.json"
+   ```
+
+---
+
+### 7.5 — Assertion Fails with No Clear Reason — Use Postman Console
+
+**Symptom:** A test assertion fails (red FAIL badge), but the error message is generic or does not clearly explain what went wrong. For example:
+```
+AssertionError: expected undefined to be a number
+```
+
+**Cause:** The response body may have a different structure than expected (e.g., a field is missing, nested differently, or the endpoint returned an error response instead of the expected data). Without logging, it is difficult to see the actual response content that caused the failure.
+
+**Solution:**
+1. **Open the Postman Console** — press `Ctrl + Alt + C` (Windows/Linux) or `Cmd + Alt + C` (macOS) to open the Console panel. The Console displays detailed logs for every request/response, including headers, body, and any `console.log()` output from your scripts.
+2. **Add `console.log()` statements** to your test scripts to inspect the actual response data:
+   ```javascript
+   const responseData = pm.response.json();
+   console.log("Response body:", JSON.stringify(responseData, null, 2));
+   console.log("Status code:", pm.response.code);
+
+   pm.test("Product has an id field", function () {
+       pm.expect(responseData).to.have.property('id').that.is.a('number');
+   });
+   ```
+3. **Re-run the request** and check the Console output to see the exact response body. This will reveal whether the field exists, is named differently, or if the API returned an error response.
+4. **Common root causes:**
+   - The API returned an error object (e.g., `{ "error": "Unauthorized" }`) instead of the expected data — your script tried to access a field that only exists in successful responses.
+   - A field name is different from what you expected (e.g., `product_id` vs. `productId`).
+   - The response is an array, but your script treats it as an object (or vice versa).
+
+---
+
+### 7.6 — Newman HTML Report Does Not Generate
+
+**Symptom:** Running Newman with the `-r html` reporter flag does not produce an HTML file, or Newman throws an error like:
+```
+error: reporter "html" could not be loaded
+```
+
+**Cause:** The `newman-reporter-html` package is not installed. Unlike the CLI reporter (which is built-in), the HTML reporter is a separate npm package that must be installed globally.
+
+**Solution:**
+1. **Install the HTML reporter globally:**
+   ```bash
+   npm install -g newman-reporter-html
+   ```
+2. **Re-run your Newman command** with the HTML reporter:
+   ```bash
+   newman run "EShop_API_Collection.json" -e "EShop_Environment.json" -r cli,html --reporter-html-export "report.html"
+   ```
+3. **Verify the output** — after a successful run, the `report.html` file will be created in the current directory. Open it in any web browser to view the detailed test report.
+4. **If the issue persists**, check your npm global installation path:
+   ```bash
+   npm list -g --depth=0
+   ```
+   Ensure both `newman` and `newman-reporter-html` appear in the list. If not, re-install them.
+
 ---
 
 ## Section 8: References
