@@ -1,13 +1,39 @@
 {
   "info": {
-    "_postman_id": "5e89d1b0-73d8-4f24-9b2f-bb426b38c2ef",
+    "_postman_id": "e7f1a271-834a-4e9a-933b-c74dd5f95a05",
     "name": "EShop SUT Collection",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "56283317"
+    "_exporter_id": "50570624",
+    "_collection_link": "https://go.postman.co/collection/50570624-e7f1a271-834a-4e9a-933b-c74dd5f95a05?source=collection_link"
   },
   "item": [
     {
       "name": "api/register",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const randomEmail = `test_${Math.floor(Math.random() * 10000)}@eshop.com`;\r",
+              "pm.environment.set(\"email\", randomEmail);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
@@ -35,6 +61,45 @@
     },
     {
       "name": "api/login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const responseData = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Save Auth Token and User ID\", function () {\r",
+              "     pm.environment.set(\"auth_token\", responseData.token);\r",
+              "     pm.environment.set(\"user_id\", responseData.user.id);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response time is acceptable (< 800ms)\", function () {\r",
+              "    // Validates that the request took less than 800 milliseconds to complete\r",
+              "    pm.expect(pm.response.responseTime).to.be.below(800);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Validate Login Schema, Data Types, and Nested Objects\", function () {\r",
+              "    const responseData = pm.response.json();\r",
+              "    \r",
+              "    // 1. Validate flat properties (root level)\r",
+              "    pm.expect(responseData).to.be.an('object');\r",
+              "    pm.expect(responseData).to.have.property('message').that.is.a('string');\r",
+              "    pm.expect(responseData).to.have.property('token').that.is.a('string');\r",
+              "    \r",
+              "    // 2. Validate nested JSON objects (the 'user' object)\r",
+              "    pm.expect(responseData).to.have.property('user').that.is.an('object');\r",
+              "    \r",
+              "    // 3. Drill down into the nested object's data types\r",
+              "    pm.expect(responseData.user).to.have.property('id').that.is.a('number');\r",
+              "    pm.expect(responseData.user).to.have.property('email').that.is.a('string');\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
@@ -116,6 +181,24 @@
     },
     {
       "name": "api/users/me (GET)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const user = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Save User Credentials\", function () {\r",
+              "    pm.environment.set(\"name\", user.name);\r",
+              "    pm.environment.set(\"shipping_address\", user.shipping_address);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -163,6 +246,41 @@
     },
     {
       "name": "api/products (GET)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const products = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Save First Product ID, Name & Price\", function () {\r",
+              "    // Check if the array has items to avoid runtime errors\r",
+              "    if(products.length > 0) {\r",
+              "        pm.environment.set(\"product_id\", products[0].id);\r",
+              "        pm.environment.set(\"product_name\", products[0].name);\r",
+              "        pm.environment.set(\"product_price\", products[0].price);\r",
+              "    }\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Validate Array Structure and Length\", function () {\r",
+              "    const products = pm.response.json();\r",
+              "    \r",
+              "    // Ensure the response is explicitly an array format\r",
+              "    pm.expect(products).to.be.an('array');\r",
+              "    \r",
+              "    // Ensure the array is not empty (length > 0)\r",
+              "    pm.expect(products).to.not.be.empty;\r",
+              "    \r",
+              "    // Alternatively, if you expect an exact number of items, use lengthOf:\r",
+              "    // pm.expect(products).to.have.lengthOf(10);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -403,6 +521,32 @@
     },
     {
       "name": "api/cart (GET)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const cartItems = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Calculate and Save Total Sum\", function () {\r",
+              "    let total = 0;\r",
+              "    \r",
+              "    // Ensure the response is an array before calculating\r",
+              "    if (Array.isArray(cartItems) && cartItems.length > 0) {\r",
+              "        cartItems.forEach(item => {\r",
+              "            total += item.price; \r",
+              "        });\r",
+              "    }\r",
+              "    \r",
+              "    pm.environment.set(\"sum_money\", total);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -426,7 +570,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"id\": 1,\r\n    \"name\": \"Sản phẩm A\",\r\n    \"price\": 100000,\r\n    \"quantity\": 2\r\n}",
+          "raw": "{\r\n    \"id\": {{product_id}},\r\n    \"name\": \"{{product_name}}\",\r\n    \"price\": {{product_price}},\r\n    \"quantity\": 2\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -448,12 +592,27 @@
     },
     {
       "name": "api/checkout (POST)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Order placed successfully (Status 200)\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"total_amount\": 200000,\r\n    \"shipping_address\": \"123 Le Loi, TP.HCM\"\r\n}",
+          "raw": "{\r\n    \"total_amount\": {{sum_money}},\r\n    \"shipping_address\": \"{{shipping_address}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
