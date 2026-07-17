@@ -85,10 +85,12 @@ All examples in this guide use the **EShop SUT** (System Under Test) — a Node.
        - **Internal**: Only accessible by you (best for solo testing).
        - **Partner**: Shared with invited team members (best for group collaboration).
        - **Public**: Visible to anyone on the internet (used for publishing API docs).
-2. **Create a new Environment**: Click the plus button (`+`) at the top of the left sidebar → select **Environment** → name it according to your project environment (e.g., "EShop Env").
+2. **Create Collection**: In the left sidebar, click the **Collections** tab → click the plus button (`+`) or **Create Collection** → name your collection according to your project (e.g., "EShop API Collection"). A collection is a container that groups and organizes your API requests, making it easier to manage, run, and share tests.
+   ![alt text](User_Guide_image/postman_createcollection.png)
+3. **Create a new Environment**: Click the plus button (`+`) at the top of the left sidebar → select **Environment** → name it according to your project environment (e.g., "EShop Env").
 
    ![alt text](User_Guide_image/postman_createenv.png)
-3. **Add variables**: Add the required environment variables to store configuration values (such as URL, authentication credentials, dynamic parameters). Below is an example of configuration variables for the **EShop** system under test (SUT):
+4. **Add variables**: Add the required environment variables to store configuration values (such as URL, authentication credentials, dynamic parameters). Below is an example of configuration variables for the **EShop** system under test (SUT):
 
 | Variable | Initial Value | Description |
 |----------|--------------|-------------|
@@ -98,11 +100,11 @@ All examples in this guide use the **EShop SUT** (System Under Test) — a Node.
 | `auth_token` | *(leave empty)* | Authentication token (JWT) |
 | `product_id` | *(leave empty)* | Product ID for testing |
 
-4. **Select the Environment**: Choose the newly created environment (e.g., "EShop Env") from the environment dropdown in the top-right corner of Postman to apply the variables.
+5. **Select the Environment**: Choose the newly created environment (e.g., "EShop Env") from the environment dropdown in the top-right corner of Postman to apply the variables.
 
    ![alt text](User_Guide_image/postman_selectenv.png)
 
-5. **Import Collection**: Import your project's API Collection (e.g., the exported `.json` file of EShop API). Click the **Import** button in the left sidebar (or click the ellipsis `...` next to the collection section header) → select the `.json` collection file.
+6. **Import Collection & Environment**: Import your project's API Collection and Environment files (e.g., the exported `.json` files of EShop API). Press `Ctrl + O` (or click the **Import** button in the left sidebar) → select the `.json` collection and environment files.
 
    ![alt text](User_Guide_image/postman_import.png)
 
