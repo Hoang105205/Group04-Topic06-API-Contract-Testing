@@ -179,84 +179,202 @@ To verify that the setup is successful and the environment variables are active:
 
 ## Section 4: API Authentication Testing Patterns
 
-This section demonstrates how Postman handles authentication — specifically **JWT Bearer Token**, which is the auth mechanism used by the EShop SUT. You will learn how to configure auth at the Collection level, test auth failure scenarios, and automate token management with scripts.
+This section walks you through how Postman handles authentication — specifically **JWT Bearer Token**, which is the auth mechanism used by the EShop SUT. You will learn how to configure auth once and let Postman propagate it everywhere, test auth failure scenarios, and automate token management so you never have to copy-paste tokens by hand.
 
 ### 4.1 — Collections and Auth Inheritance
 
-In Postman, a **Collection** is a group of related API requests. Collections can contain **sub-folders** to organize requests by feature (e.g., "Auth", "Products", "Cart").
+In Postman, a **Collection** is a group of related API requests. You should already have a collection with your requests imported from Section 2. Collections can also contain **sub-folders** to organize requests by feature area (e.g., "Auth", "Products", "Cart", "Orders"), making it easy to locate and run related requests together.
 
-A key feature is **inheritance**: authorization settings applied at the Collection or folder level are automatically inherited by all child requests. This means you configure auth **once** at the top level, and every request inside automatically uses it — no need to set headers manually per request.
+A key feature is **auth inheritance**: authorization settings applied at a parent level (Collection or folder) are automatically inherited by all child requests. Think of it like CSS cascading — you define a rule once at the top, and it flows down to every request inside. This eliminates the need to configure headers individually on dozens of requests.
 
-> **Watch the video below** to see how Collections, folders, and auth inheritance work in Postman.
+#### Step-by-step: Configure Auth at the Collection Level
 
-<video width="100%" controls>
-  <source src="hoang/Hoang_postman_vid_01.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+1. In the left sidebar, click on your **collection name** (e.g., `Demo Postman`). This opens the collection's overview panel, which contains several tabs such as: *Overview*, *Authorization*, *Variables*.
+2. Click the **Authorization** tab.
+
+   ![alt text](User_Guide_image/postman_collections_auth.png)
+
+3. In the **Type** dropdown, you will see several options (No Auth, API Key, Basic Auth, Bearer Token, etc.). Select `Bearer Token` — this is the auth scheme used by the EShop SUT.
+4. In the **Token** field that appears below, enter `{{auth_token}}`. The double curly braces tell Postman to resolve this value from your environment variables at runtime (see Section 2 for how `auth_token` was defined).
+
+   ![alt text](User_Guide_image/postman_collections_auth_type.png)
+
+5. Click **Save** (`Ctrl + S`) to persist the collection-level auth configuration.
+6. To verify inheritance is working: open any child request inside the collection (e.g., `GET /api/users/me`) → click its **Authorization** tab. The Type field should automatically show **Inherit auth from parent**, meaning this request will use whatever auth is configured at the collection level.
+
+   <!-- 📸 Screenshot: A child request's Authorization tab showing "Inherit auth from parent" -->
+   ![alt text](User_Guide_image/postman_collections_auth_inheritance.png)
+
+> **Key takeaway:** You configure auth **once** at the collection level, and every request inside automatically includes the `Authorization: Bearer <token>` header. If you ever need to override auth for a specific request or folder, you can change its Type to something other than "Inherit auth from parent" — but for the EShop SUT, inheritance is all you need.
 
 ### 4.2 — Testing Authentication with Bearer Token
 
-The EShop SUT uses **JWT Bearer Token** authentication. After logging in, the server returns a token that must be included in the `Authorization` header of subsequent requests:
+The EShop SUT uses **JWT (JSON Web Token) Bearer Token** authentication. The flow works like this:
+
+1. Client sends a login request (`POST /api/auth/login`) with username and password.
+2. Server validates credentials and returns a JWT token in the response body.
+3. Client includes that token in the `Authorization` header of every subsequent request:
 
 ```
 Authorization: Bearer <token>
 ```
 
-In Postman, you configure this at the **Collection level**:
-1. Select your Collection → click the **Authorization** tab
-2. Set **Type** to `Bearer Token`
-3. Enter `{{auth_token}}` as the Token value (referencing the environment variable)
+Not all endpoints require authentication. In the EShop SUT:
+- **Public (no auth needed):** `GET /api/products`, `POST /api/auth/login`
+- **Protected (auth required):** `POST /api/cart`, `GET /api/orders`, `POST /api/coupon/redeem`
 
-All child requests now automatically include this header.
+With the collection-level auth you configured in 4.1, Postman handles the Authorization header automatically for every request. But a good tester doesn't just verify the happy path — we also need to confirm the API **rejects** requests that are missing authentication or carry invalid credentials.
 
-#### Testing Auth Failure Scenarios
+#### Before You Start: Obtain a Valid Token
 
-A critical part of auth testing is verifying that the API **rejects** unauthorized requests. Here are two common test cases:
+Before testing any protected endpoint, make sure you have a valid token:
+1. Open the **Login** request (`POST {{base_url}}/api/auth/login`).
+2. In the **Body** tab (raw JSON), ensure the credentials are correct:
+   ```json
+   {
+       "username": "test@eshop.com",
+       "password": "Test1234!"
+   }
+   ```
 
-| Test Case | Setup | Expected Result |
-|-----------|-------|----------------|
-| **No token** | Remove the Bearer token (set Authorization to "No Auth") | `401 Unauthorized` |
-| **Fake/invalid token** | Enter a random string as the token | `403 Forbidden` |
+   Or you can use environment variables to store the credentials and then reference them in the request body for easier management and reuse of the credentials:
+   ```json
+   {
+       "username": "{{user_email}}",
+       "password": "{{user_password}}"
+   }
+   ```
+3. Click **Send** → the response body should contain a `token` field (a long JWT string like `eyJhbGciOiJIUzI1NiIs...`).
 
-> **Watch the video below** to see how to run a request and test both auth failure scenarios in Postman.
+   ![alt text](User_Guide_image/postman_auth_get_token.png)
 
-<video width="100%" controls>
-  <source src="hoang/Hoang_postman_vid_02.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video> 
+> If you already configured the auto-save technique from Section 4.3, the token is automatically stored in `{{auth_token}}`. For now, let's focus on testing auth behavior.
 
-> *Video 2*: Running GET /api/users/me with Bearer Token auth, then testing no-token (401) and fake-token (403) scenarios.
+#### Step-by-step: Verify Authenticated Request Works (Happy Path)
 
-### 4.3 — Auto-Save Token with Post-Response Script
+1. Open a protected endpoint, such as `GET {{base_url}}/api/users/me`.
+2. Confirm the **Authorization** tab shows **Inherit auth from parent** (meaning it uses the collection-level Bearer Token with `{{auth_token}}`).
+3. Click **Send**.
+4. You should receive a **`200 OK`** response with the user data in the response body.
 
-When testing authenticated APIs, you typically need to:
-1. Send a login request → receive a token
-2. **Copy** the token → **paste** it into the environment variable
-3. Use the variable in subsequent requests
+   ![alt text](User_Guide_image/postman_auth_get_profile.png)
 
-Manually copying the token every time is tedious and error-prone. Postman solves this with **post-response scripts** — JavaScript code that runs automatically after a request completes.
+This confirms the full auth chain is working: login → token → inherited header → successful access.
 
-By adding a short script to the login request's **Post-response** tab, the token is automatically extracted from the response and saved to the `{{auth_token}}` environment variable:
+#### Step-by-step: Test "No Token" Scenario (Expect 401)
 
-```javascript
-const responseData = pm.response.json();
+**Why test this?** A secure API must actively refuse requests that arrive with no authentication at all. If the server returns `200 OK` without a token, that's a security vulnerability — anyone could access protected data.
 
-if (pm.response.code === 200 && responseData.token) {
-    pm.environment.set("auth_token", responseData.token);
-    console.log("auth_token saved to environment");
-}
-```
+1. On the same request (`GET /api/orders`), click the **Authorization** tab.
+2. Change the **Type** dropdown from `Inherit auth from parent` to `No Auth`. This strips the `Authorization` header from the request entirely.
 
-After running the login request once, `{{auth_token}}` is automatically populated — all subsequent requests using `Authorization: Bearer {{auth_token}}` work immediately without any manual copy-paste.
+   ![alt text](User_Guide_image/postman_auth_no_token.png)
 
-> **Watch the video below** to see the problem (manual token copy) and the solution (post-response script) in action.
+3. Click **Send**.
+4. The server should return **`401 Unauthorized`** with an error message like `"Missing or invalid Authorization header"` — confirming that unauthenticated access is properly blocked.
 
-<video width="100%" controls>
-  <source src="hoang/Hoang_postman_vid_03.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video> 
+   ![alt text](User_Guide_image/postman_auth_no_token_response.png)
 
-> *Video 3: Demonstrating the manual token copy problem, then introducing the post-response script that automatically overrides the `auth_token` variable after login.*
+5. **Important:** Restore the Authorization Type back to `Inherit auth from parent` before moving on to the next test.
+
+#### Step-by-step: Test "Fake/Invalid Token" Scenario (Expect 401)
+
+**Why test this?** A different kind of threat: what if someone sends a request with a token that *looks* structurally valid but was never issued by the server? The API must detect this and reject it. This is different from the "no token" test — here, a token is present, but the server's JWT verification fails because the token was not signed by the server's secret key.
+
+1. On the same request, click the **Authorization** tab.
+2. Change the **Type** dropdown to `Bearer Token` (overriding the inherited setting for this specific request).
+3. In the **Token** field, type a random/fake string (e.g., `abc` or any gibberish).
+
+   ![alt text](User_Guide_image/postman_auth_fake_token.png)
+
+4. Click **Send**.
+5. The server should return **Error**. The EShop SUT's auth middleware uses JWT verification (`jwt.verify()`) — if the token signature doesn't match the server's secret key, the request is rejected immediately.
+
+   ![alt text](User_Guide_image/postman_auth_fake_token_response.png)
+
+6. **Important:** Restore the Authorization Type back to `Inherit auth from parent`.
+
+#### Summary of Auth Failure Test Cases
+
+| Test Case | Setup | Expected Status | Error Message | What It Proves |
+|-----------|-------|----------------|---------------|----------------|
+| **Valid token** | Inherit from parent (collection Bearer Token) | `200 OK` | — | Auth chain works end-to-end |
+| **No token** | Set Type to "No Auth" | `401 Unauthorized` | `Missing or invalid Authorization header` | API blocks unauthenticated access |
+| **Fake/invalid token** | Enter a random string as Bearer Token | `401 Unauthorized` (But because the SUT is designed to have bugs so it currently return `403 Forbidden`) | `Invalid or expired token` | API rejects tokens not issued by the server |
+
+> **Note:** Because the EShop SUT is designed to have bugs, the actual response for a fake or invalid token may be `403 Forbidden` instead of `401 Unauthorized`.
+
+### 4.3 — Eliminating Manual Token Management
+
+#### The Problem
+
+At this point, you've probably noticed a friction point in the workflow. Every time you want to test an authenticated endpoint, you need to:
+
+1. Send the login request (`POST /api/auth/login`) → receive a JWT token in the response body.
+2. **Manually select and copy** the long token string from the response JSON.
+3. Open your **Environment** settings → find the `auth_token` variable → **paste** the token into the *Current Value* field.
+4. Only then can your other requests use `{{auth_token}}` successfully.
+
+This manual copy-paste cycle is tedious, error-prone (it's easy to copy only part of the token), and breaks your testing flow — especially when you need to re-authenticate frequently (tokens expire, the server restarts, or you switch between test users).
+
+#### The Solution: Automatic Token Extraction
+
+Postman provides a built-in mechanism to **automatically capture values from a response and store them in environment variables** — eliminating the manual copy-paste entirely. The idea is simple:
+
+> *"After the login response arrives, check if it contains a token. If yes, save that token directly into the `auth_token` environment variable — so the very next request can use it without any human intervention."*
+
+This is accomplished through a small piece of logic added to the login request's **Post-response** phase. You don't need to understand JavaScript deeply — just follow the steps below.
+
+#### Step-by-step: Configure Auto-Save on the Login Request
+
+1. Open the **Login** request (`POST {{base_url}}/api/auth/login`).
+2. Below the URL bar, click the **Scripts** tab. You will see two sub-tabs: *Pre-request* and *Post-response*.
+3. Select the **Post-response** sub-tab — this is where you place logic that runs **after** the server responds.
+
+   ![alt text](User_Guide_image/postman_auth_post_response.png)
+
+4. In the code editor area, paste the following code:
+
+   ```javascript
+   // Auto-save auth_token to environment after successful login
+   const responseData = pm.response.json();
+
+   if (pm.response.code === 200 && responseData.token) {
+      pm.environment.set("auth_token", responseData.token);
+      console.log("auth_token saved to environment:", responseData.token.substring(0, 20) + "...");
+   } else {
+      console.warn("Login failed or no token in response — auth_token NOT updated");
+   }
+   ```
+
+   **What this does, line by line:**
+   - `pm.response.json()` — parses the raw response body into a JavaScript object so we can read its fields.
+   - `pm.response.code === 200` — only proceed if the login was successful (status 200).
+   - `responseData.token` — check that the response actually contains a token field.
+   - `pm.environment.set("auth_token", ...)` — write the token value into the `auth_token` environment variable.
+   - `console.log(...)` — print a confirmation message in the Postman Console for debugging.
+
+   ![alt text](User_Guide_image/postman_auth_post_response_script.png)
+
+5. Click **Save** (`Ctrl + S`), then click **Send** to execute the login request.
+
+6. Now open any protected request (e.g., `GET {{base_url}}/api/users/me`) and click **Send** — it works immediately. No copy, no paste, no switching tabs. The token is already there.
+
+#### How It Works (Request Lifecycle)
+
+| Phase | What Happens |
+|-------|-------------|
+| **1. You click Send** | Postman fires `POST /api/auth/login` with your credentials |
+| **2. Server responds** | Response body contains `{ "token": "eyJhbG..." }` |
+| **3. Post-response logic runs** | The code extracts `responseData.token` and writes it into the `auth_token` environment variable |
+| **4. Next request** | Any request using `{{auth_token}}` in its Authorization header now has the fresh token — ready to go |
+
+#### Troubleshooting Tips
+
+- **Token not saving?** Open the **Postman Console** (`Ctrl + Alt + C`) and look for the `"auth_token saved to environment"` message. If it's missing, the post-response code may not have run — check that it's in the *Post-response* tab (not *Pre-request*).
+- **Server returned an error?** If the login fails (wrong credentials, server down), the `if` condition (`pm.response.code === 200`) prevents overwriting a good token with garbage. This is a safety guard.
+
+> **Key takeaway:** This technique is not about learning to code — it's about **solving a real workflow problem**. Once you configure this on your login request, token management becomes fully automatic for the rest of your testing session. You login once, and every subsequent request just works.
 
 ---
 
