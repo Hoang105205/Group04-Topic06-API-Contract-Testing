@@ -380,23 +380,355 @@ This is accomplished through a small piece of logic added to the login request's
 
 ## Section 4b: Contract Testing with Postman
 
-> **Author:** Thuận | **Reference:** `DEEP_RESEARCH_Contract_Testing_Postman.md`
+### 4b.1 — What is Contract Testing?
 
-### What is Contract Testing?
+API testing spans across multiple levels — from unit tests and functional tests to end-to-end integration tests. Among these, **Contract Testing** plays a unique role. It validates that the communication between an API provider (the backend server) and an API consumer (the frontend client or another service) adheres strictly to a predefined, agreed-upon "contract."
 
-*[Thuận: Write 2-3 paragraphs explaining contract testing — what it is, why it matters, how it differs from schema validation. Reference the research report Section 1.]*
+A contract defines the exact interface of the API, which includes:
+- **Status Codes:** The expected HTTP status codes returned for both success and error paths (e.g., `200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`, `404 Not Found`).
+- **Headers:** Required response headers (e.g., `Content-Type: application/json`, `Authorization`).
+- **Data Structure (JSON Schema):** The shape of the JSON response, including key names, required properties, expected data types (strings, integers, arrays, booleans, objects), nested structures, and value boundaries (e.g., positive numbers, specific format constraints like emails).
+- **Behavioral Patterns:** Consistent error messages and payload structures under negative scenarios.
 
-### How Postman Implements Contract Testing
+#### Contract Testing vs. Traditional Functional Testing
+While functional testing verifies that the API's business logic works correctly (e.g., adding an item to the cart actually updates the database and calculates the correct price), contract testing focuses entirely on the **structural interface**. It ensures that the client application can safely consume the API response without encountering runtime data-type mismatches or missing properties that could cause frontend crashes (e.g., trying to read a property from `null` or a missing field).
 
-*[Thuận: Explain Postman's built-in features — JSON Schema validation via `pm.response.to.have.jsonSchema()`, response structure assertions, Mock Servers. Reference the research report Section 2.]*
+#### Consumer-Driven Contract Testing (CDC)
+In large microservice architectures, contract testing is often **consumer-driven**. In this model, the client/consumer applications define their expectations of the API first, which are serialized into contract files (e.g., using a tool like Pact). These contracts are then run against the backend provider to verify compatibility. Since the EShop SUT is a monolithic system where the provider and consumer are within the same context, a full consumer-driven contract testing tool like Pact is overkill. However, implementing **lightweight contract tests** using Postman test scripts is highly effective in ensuring that no breaking changes are introduced to the API schema during development.
 
-### Examples from EShop SUT
+### 4b.2 — How Postman Implements Contract Testing
 
-*[Thuận: Show JSON Schema examples for EShop SUT endpoints (products, cart, orders). Include code snippets for post-response scripts. Reference the research report Section 3.]*
+Postman provides robust, built-in features that make it easy to write and maintain contract tests without setting up complex testing frameworks.
 
-### Comparison: Postman vs. Dedicated Contract Testing Tools
+#### 1. JSON Schema Validation via `pm.response.to.have.jsonSchema()`
+At the heart of Postman's contract testing capability is the `pm.response.to.have.jsonSchema(schema)` assertion. Postman integrates the **Ajv validator (v6.12.5)**, a fast JSON Schema validator. With it, you can declare the expected response structure in a standard JSON Schema draft-07 format and assert that the server response complies with it in a single statement.
+The validator checks:
+- **Data Types:** Validates that properties are strings, integers, arrays, objects, booleans, or null.
+- **Required Fields:** Ensures that crucial properties are always present in the response.
+- **Formats:** Validates string formats such as `email`, `date-time`, or `uri`.
+- **Value Constraints:** Enforces minimum/maximum values, enum values (allowable string options), and array length.
 
-*[Thuận: Add a comparison table (Postman vs. Pact) explaining when to use each. Reference the research report Section 4.]*
+#### 2. Response Structure Assertions
+Beyond raw schema validation, Postman's post-response scripting sandbox enables you to verify other aspects of the contract:
+- **Status Code Validation:** `pm.response.to.have.status(200)` checks that the endpoint returns the correct status code.
+- **Header Verification:** `pm.response.to.have.header("Content-Type", "application/json; charset=utf-8")` ensures the data is returned in the correct format.
+- **Performance Agreements (SLA):** `pm.expect(pm.response.responseTime).to.be.below(800)` asserts that the API meets performance requirements.
+
+#### 3. Saved Examples and Mock Servers
+Every request in Postman can save its responses as **Examples**. These saved examples serve as the documentation of the API contract. Postman Mock Servers can then use these saved examples to spin up a mock API endpoint. This mock server matches incoming request paths, headers, and bodies against the saved contract examples and returns the predefined responses. This allows frontend developers to write their code against the Mock Server before the real backend is even implemented.
+
+![Postman Contract Test Tab](User_Guide_image/postman_contract_test_tab.png)
+
+### 4b.3 — EShop SUT Contract Testing Implementation
+
+To organize contract tests cleanly and avoid cluttering the functional test suite, we created a dedicated folder named **`Contract Testing`** inside both the positive collection (`SUT_Contract_Collection.json`) and the negative collection (`SUT_Contract_Negative_Collection.json`).
+
+Inside the **`Contract Testing`** folder, requests contain full contract validation scripts. For the root-level requests outside the folder, contract testing assertions are removed, ensuring the main collections remain clean.
+
+Below are the contract testing schemas and post-response script templates implemented for the EShop SUT endpoints.
+
+#### 1. POST /api/login
+- **Contract Goal:** Verifies that a successful login returns a `200 OK` status, a JWT token string, and a user object containing the correct user profile details.
+- **Environment Action:** Automatically extracts and saves the `auth_token` and `user_id` to the environment variables upon successful validation, enabling standalone execution of the contract testing folder.
+- **Test Script:**
+```javascript
+// 1. Declare the full JSON Schema for authSchema
+const authSchema = {
+  "type": "object",
+  "required": ["message", "token", "user"],
+  "properties": {
+    "message": { "type": "string" },
+    "token": { "type": "string" },
+    "user": {
+      "type": "object",
+      "required": ["id", "name", "email", "role"],
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      }
+    }
+  }
+};
+
+// 2. Validate the response code is 200 OK
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body matches the expected JSON schema
+pm.test("Response matches Auth JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(authSchema);
+});
+
+// 4. Save Auth Token and User ID to environment variables if login is successful
+if (pm.response.code === 200) {
+    const responseData = pm.response.json();
+    pm.environment.set("auth_token", responseData.token);
+    pm.environment.set("user_id", responseData.user.id);
+}
+```
+
+#### 2. GET /api/products
+- **Contract Goal:** Asserts that the products catalog endpoint returns a list (array) of product objects, where each product contains mandatory properties like `id`, `name`, `price`, `description`, `imageUrl`, and `category_id` with valid types.
+- **Test Script:**
+```javascript
+// 1. Declare the products list JSON Schema
+const productsSchema = {
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "price", "description", "imageUrl", "category_id"],
+    "properties": {
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "price": { "type": "number", "minimum": 0 },
+      "description": { "type": "string" },
+      "imageUrl": { "type": "string" },
+      "category_id": { "type": "integer" }
+    }
+  }
+};
+
+// 2. Validate the response code is 200 OK
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body against the JSON Schema contract
+pm.test("Products list matches JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(productsSchema);
+});
+```
+
+#### 3. GET /api/products/:id
+- **Contract Goal:** Validates that retrieving a single product by its ID returns a single JSON object matching the properties of a product entity.
+- **Test Script:**
+```javascript
+// 1. Declare the single product JSON Schema
+const singleProductSchema = {
+  "type": "object",
+  "required": ["id", "name", "price", "description", "imageUrl", "category_id"],
+  "properties": {
+    "id": { "type": "integer" },
+    "name": { "type": "string" },
+    "price": { "type": "number", "minimum": 0 },
+    "description": { "type": "string" },
+    "imageUrl": { "type": "string" },
+    "category_id": { "type": "integer" }
+  }
+};
+
+// 2. Validate the response status code is 200 OK
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body matches the JSON schema contract
+pm.test("Product detail matches JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(singleProductSchema);
+});
+```
+
+#### 4. GET /api/cart
+- **Contract Goal:** Verifies that retrieving the shopping cart returns an array of cart items, each item representing a product along with a quantity indicator.
+- **Test Script:**
+```javascript
+// 1. Declare the expected JSON schema for the cart items
+const cartSchema = {
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "price", "quantity"],
+    "properties": {
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "price": { "type": "number", "minimum": 0 },
+      "quantity": { "type": "integer", "minimum": 1 }
+    }
+  }
+};
+
+// 2. Validate the response status code is 200 OK
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body against the expected JSON schema
+pm.test("Cart items match JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(cartSchema);
+});
+```
+
+#### 5. POST /api/cart
+- **Contract Goal:** Validates that successfully adding a product to the cart returns a status message indicating the operation's outcome.
+- **Test Script:**
+```javascript
+// 1. Declare the expected JSON schema for adding an item to the cart
+const addToCartSchema = {
+  "type": "object",
+  "required": ["message"],
+  "properties": {
+    "message": { "type": "string" }
+  }
+};
+
+// 2. Validate the response status code is 200 OK (based on SUT implementation)
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body against the expected JSON schema
+pm.test("Add to cart response matches JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(addToCartSchema);
+});
+```
+
+#### 6. POST /api/checkout
+- **Contract Goal:** Asserts that completing the checkout workflow returns a status code of `200 OK` and a structured response containing a confirmation message and the newly generated order identifier (`orderId`).
+- **Test Script:**
+```javascript
+// 1. Declare the expected JSON schema for checkout success
+const checkoutSchema = {
+  "type": "object",
+  "required": ["message", "orderId"],
+  "properties": {
+    "message": { "type": "string" },
+    "orderId": { "type": "integer" }
+  }
+};
+
+// 2. Validate the response status code is 200 OK
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body against the expected JSON schema
+pm.test("Checkout response matches JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(checkoutSchema);
+});
+```
+
+#### 7. GET /api/orders/my-orders
+- **Contract Goal:** Validates that fetching the user's order history returns an array of order objects tracking order identifiers, total amount, shipping addresses, statuses, and timestamps.
+- **Test Script:**
+```javascript
+// 1. Declare the expected JSON schema for the list of orders
+const ordersSchema = {
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "user_id", "total_amount", "status", "shipping_address", "created_at"],
+    "properties": {
+      "id": { "type": "integer" },
+      "user_id": { "type": "integer" },
+      "total_amount": { "type": "number", "minimum": 0 },
+      "status": { "type": "string", "enum": ["pending", "confirmed", "shipping", "delivered", "cancelled"] },
+      "shipping_address": { "type": "string" },
+      "created_at": { "type": "string" }
+    }
+  }
+};
+
+// 2. Validate the response status code is 200 OK
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body against the expected JSON schema
+pm.test("Orders list matches JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(ordersSchema);
+});
+```
+
+#### 8. POST /api/apply-coupon
+- **Contract Goal:** Asserts that applying a valid discount coupon returns a success status boolean flag, the coupon ID, the discount amount deducted, the final checkout amount, and a friendly message.
+- **Test Script:**
+```javascript
+// 1. Declare the expected JSON schema for applying a coupon successfully
+const couponSchema = {
+  "type": "object",
+  "required": ["success", "coupon_id", "discount_amount", "final_amount", "message"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "coupon_id": { "type": "integer" },
+    "discount_amount": { "type": "number" },
+    "final_amount": { "type": "number", "minimum": 0 },
+    "message": { "type": "string" }
+  }
+};
+
+// 2. Validate the response status code is 200 OK
+pm.test("Status code is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 3. Validate the response body matches the expected JSON schema
+pm.test("Coupon validation matches JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(couponSchema);
+});
+```
+
+#### 9. Negative Testing: Error Response Contracts
+Testing error conditions is a vital part of contract testing. We must guarantee that the API returns a consistent error envelope when things go wrong so that client applications can handle failures gracefully without crashing.
+The global contract for errors in the EShop SUT specifies a `400 Bad Request`, `401 Unauthorized`, or `404 Not Found` response with a JSON object containing a mandatory string property `error`.
+
+##### Example: POST /api/apply-coupon (Error Schema Validation)
+When a coupon validation fails, it must return a `400 Bad Request` status and a structured error payload.
+```javascript
+// 1. Define the JSON schema for error responses
+const errSchema = {
+  "type": "object",
+  "required": ["error"],
+  "properties": {
+    "error": { "type": "string" }
+  }
+};
+
+// 2. Validate the response status code is 400 Bad Request
+pm.test("Status code is 400 Bad Request", function () {
+    pm.response.to.have.status(400);
+});
+
+// 3. Validate the response body against the error JSON schema
+pm.test("Error response matches Error JSON Schema Contract", function () {
+    pm.response.to.have.jsonSchema(errSchema);
+});
+```
+
+##### Capturing SUT Implementation Bugs via Contract Tests
+During the validation execution against the EShop SUT, our contract tests successfully captured two API bugs (RESTful design mismatches):
+1. **GET /api/products/999 (Product Not Found):** Instead of returning `404 Not Found`, the server returned a `200 OK` status without the requested product details and without an `error` property. The contract test caught this by asserting:
+   - Expected status: `404 Not Found`
+   - Expected response matches: `errSchema`
+   - Result: **FAILED** (Captured status `200` instead of `404`).
+2. **POST /api/cart (Add Invalid Product ID):** Sending product ID `-1` returned `200 OK` with `"message": "Added to cart"`, representing a lack of server-side validation. The contract test caught this by expecting a `400 Bad Request` status and `errSchema` response, failing and highlighting the bug.
+
+##### GET /api/products/999 (Product Not Found) FAILED Assertion:
+![Failed Contract Test - Product Not Found (999)](User_Guide_image/postman_failed_contract_tests_product_999.png)
+
+##### POST /api/cart (Add Invalid Product ID) FAILED Assertion:
+![Failed Contract Test - Add Invalid Product ID to Cart](User_Guide_image/postman_failed_contract_tests_cart_product_-1.png)
+
+### 4b.4 — Comparison: Postman vs. Dedicated Contract Testing Tools
+
+To understand where Postman fits in the contract testing landscape, here is a comparison between Postman's built-in capabilities and a dedicated consumer-driven contract testing tool like **Pact**:
+
+| Aspect | Postman (Built-in) | Pact (Dedicated CDC Tool) |
+| :--- | :--- | :--- |
+| **Schema Validation** | Full JSON Schema verification via Ajv | Schema verification through Pact matching |
+| **Status Code Checks** | Easy assertions (`pm.response.to.have.status`) | Yes, defined in Pact contract files |
+| **Consumer/Provider Separation** | No formal separation (tests are coupled to API run) | Clear decoupled contracts (Pact broker) |
+| **Detection of Breaking Changes** | Semi-automated (requires test collection execution) | Automated (breaks provider build in CI/CD pipeline) |
+| **Mock Stubbing** | Saved examples can serve as mock servers | Generates mock provider stubs automatically |
+| **Setup & Complexity** | Low (No infrastructure, write tests directly in IDE) | High (Requires Pact framework, Broker host, code mocks) |
+| **Ideal Architecture** | Monoliths, smaller services, single-team setups | Distributed microservices, independent team deployments |
+
+#### Verdict for EShop SUT
+For our monolithic EShop SUT, **Postman's built-in contract testing is the optimal choice**. It provides immediate feedback without the high learning curve and configuration overhead of Pact, which requires setting up a Pact Broker and writing complex consumer/provider mock frameworks.
+
+![Postman Folder Structure](User_Guide_image/postman_contract_folder_structure.png)
 
 ---
 
