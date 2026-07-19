@@ -1341,5 +1341,30 @@ error: reporter "html" could not be loaded
 
 ## Section 8: References
 
-### AI Disclosure (theo Seminar_Guide.docx Section 7 — AI Policy)
+### Official Documentation
+
+| Resource | Link |
+|----------|------|
+| Postman Learning Center | [https://learning.postman.com](https://learning.postman.com) |
+| Postman Test Script Examples | [https://learning.postman.com/docs/tests-and-scripts/write-scripts/test-examples/](https://learning.postman.com/docs/tests-and-scripts/write-scripts/test-examples/) |
+| Postman Sandbox API Reference (`pm.*`) | [https://learning.postman.com/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/overview/](https://learning.postman.com/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/overview/) |
+| Postman AI Features (Postbot) | [https://learning.postman.com/docs/getting-started/basics/about-ai/](https://learning.postman.com/docs/getting-started/basics/about-ai/) |
+| Newman CLI — GitHub | [https://github.com/postmanlabs/newman](https://github.com/postmanlabs/newman) |
+| Newman HTML Reporter — GitHub | [https://github.com/postmanlabs/newman-reporter-html](https://github.com/postmanlabs/newman-reporter-html) |
+
+### Tools & Downloads
+
+| Tool | Link |
+|------|------|
+| Postman Desktop App | [https://www.postman.com/downloads/](https://www.postman.com/downloads/) |
+| Node.js (includes npm) | [https://nodejs.org/](https://nodejs.org/) |
+
+### Contract Testing & Standards
+
+| Resource | Link |
+|----------|------|
+| JSON Schema (draft-07) | [https://json-schema.org/](https://json-schema.org/) |
+| Pact — Consumer-Driven Contract Testing | [https://pact.io](https://pact.io) |
+| PactFlow — What is CDC? | [https://pactflow.io/what-is-consumer-driven-contract-testing/](https://pactflow.io/what-is-consumer-driven-contract-testing/) |
+| Postman Mock Servers | [https://learning.postman.com/docs/design-apis/mock-apis/set-up-mock-servers/](https://learning.postman.com/docs/design-apis/mock-apis/set-up-mock-servers/) |
 
