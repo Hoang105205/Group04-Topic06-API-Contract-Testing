@@ -1,0 +1,76 @@
+{
+	"id": "c59dbe56-5fae-4dbe-81f1-28564e9a03fc",
+	"name": "EShop SUT Env",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "name",
+			"value": "Nguyen Van A",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "email",
+			"value": "test@eshop.com",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "password",
+			"value": "Test1234!",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "reset_token",
+			"value": "123456",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "new_password",
+			"value": "NewPassword123!",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "shipping_address",
+			"value": "123 Le Loi, Q1, TP.HCM",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "phone",
+			"value": "0912345678",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "coupon_code",
+			"value": "SAVE10",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "user_id",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"color": null,
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2026-07-15T20:30:00.000Z",
+	"_postman_exported_using": "Postman/12.17.2"
+}
