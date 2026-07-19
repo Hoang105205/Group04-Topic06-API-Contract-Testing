@@ -1,6 +1,6 @@
-username,password,expected_status
-alice,password123,200
-bob,password456,200
-alice,wrong_password,401
-(empty),password123,400
-charlie,(empty),400
+email,password,expected_status
+test@eshop.com,Test1234!,200
+bob@eshop.com,Password456!,200
+test@eshop.com,wrong_password,401
+(empty),Test1234!,400
+charlie@eshop.com,(empty),400

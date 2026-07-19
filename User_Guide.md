@@ -1156,7 +1156,7 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
 1. **Prepare the Data File (`login_data.csv`)**:
    Create a CSV file with headers mapping to variables used in your requests. Each row represents a single iteration:
    ```csv
-   username,password,expected_status
+   email,password,expected_status
    test@eshop.com,Test1234!,200
    bob@eshop.com,Password456!,200
    test@eshop.com,wrong_password,401
@@ -1173,15 +1173,15 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
    });
    ```
 
-3. **Running Iterations in Collection Runner**: There are 2 ways to feed test data:
-   - **Method 1: Using a Test Data File (Requires an Enterprise account)**:
+3. **Running Iterations in Collection Runner**: There are 2 ways to feed test data **(Both require an Enterprise account)**:
+   - **Method 1: Using a Test Data File**:
      - In the Collection Runner configuration, look for the **Test data file** section.
      - Click **Select File** and upload the data file directly (e.g., `login_data.csv`).
      - Postman will automatically set the number of **Iterations** to match the rows in the file and run them sequentially.
 
         ![alt text](User_Guide_image/postman_ddt_runner.png)
 
-   - **Method 2: Using Datasets & Data Views (Free for all account types)**:
+   - **Method 2: Using Datasets & Data Views**:
      - **Create a Dataset**: Click the plus (`+`) icon next to the **Datasets** section in the Collection Runner configuration to create a new dataset and name it (e.g., `Test login dataset`).
 
        ![alt text](User_Guide_image/postman_createdataset.png)
@@ -1197,9 +1197,9 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
      
 
 4. **Running Iterations in Newman**:
-   Run the test suite using the `--iteration-data` (or shorthand `-d`) flag and specify the data file. For example, running the EShop login iteration tests:
+   Run the test suite using the `--iteration-data` (or shorthand `-d`) and `--folder` flag (only if you want to run a sub folder or a specific api) and specify the data file. For example, running the EShop login iteration tests:
    ```bash
-   newman run "EShop_API_Collection.json" -e "EShop_Environment.json" -d "login_data.csv" --iteration-count 5
+   newman run "EShop_API_Collection.json" --folder "api/login" -e "EShop_Environment.json" -d "login_data.csv" --iteration-count 5
    ```
 
 
