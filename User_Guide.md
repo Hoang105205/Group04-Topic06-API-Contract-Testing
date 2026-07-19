@@ -844,6 +844,14 @@ pm.test("Order placed successfully (Status 200)", function () {
 
 *Note: Currently, the API returns a `200 OK` status code upon successful addition instead of the standard `201 Created` typically used for resource creation.*
 
+After executing your entire automated sequence, you can visually verify that all data was successfully extracted and stored.
+
+![alt text](User_Guide_image/postman_enviroment_open.png)
+
+![alt text](User_Guide_image/postman_enviroment_final_variable.png)
+
+*Note: To verify these stored values, click on your active environment name (**EShop SUT Env** here in our current example) in the top right corner, then click the **Open Environment** button. You will see all your chained variables mapped perfectly. Notice how pre-existing variables like `auth_token` and `user_id` were seamlessly updated with fresh data, while new contextual variables like `product_name`, `product_price`, `product_id`, and `sum_money` were dynamically generated during the flow.*
+
 By mastering this extraction, calculation, and injection pattern, you can fully automate complex, multi-step business workflows without any manual intervention.
 
 **Data Validation:** Beyond extracting variables, Post-response scripts are crucial for validating the structure and performance of the returned data. We achieve this using the built-in Chai.js assertion library inside the `pm.expect()` block.
@@ -988,7 +996,7 @@ A robust API should strictly validate the format of incoming payloads. If a clie
 For example, the `POST /api/admin/import-products` endpoint expects an array of products. If you send an empty array or a plain object/string, the API must reject it:
 
 ```javascript
-pm.test("Invalid payload format (missing or not an array) returns 200 (400 in reality)", function () {
+pm.test("Invalid payload returns 200 (SUT bug — should be 400)", function () {
     pm.response.to.have.status(200);
 });
 ```
@@ -1018,7 +1026,7 @@ pm.test("Invalid order state transition is rejected (Status 400)", function () {
 - **Illegal Actions:** Trying to cancel an order via `PUT /api/orders/{{order_id}}/cancel` when its status is already "delivered" or "canceled".  
 
 ```javascript
-pm.test("Invalid order state transition is rejected (Status 400)", function () {
+pm.test("Cannot cancel a delivered/canceled order (Status 400)", function () {
     pm.response.to.have.status(400);
     pm.expect(pm.response.json().error).to.include('Cannot cancel this order');
 });
