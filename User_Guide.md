@@ -398,6 +398,8 @@ In large microservice architectures, contract testing is often **consumer-driven
 
 ### 4b.2 — How Postman Implements Contract Testing
 
+> **Quick Start & Navigation Note:** If you are a beginner and want a step-by-step walkthrough on how to navigate Postman's script workspace, enter scripts, and run test assertions for the first time, please see [Section 5.1a — Test Scripts](#51a--test-scripts) for a detailed visual guide before studying the schemas below.
+
 Postman provides robust, built-in features that make it easy to write and maintain contract tests without setting up complex testing frameworks.
 
 #### 1. JSON Schema Validation via `pm.response.to.have.jsonSchema()`
@@ -502,7 +504,10 @@ pm.test("Products list matches JSON Schema Contract", function () {
 });
 ```
 
-#### 3. GET /api/products/:id
+<details>
+<summary><b>Click to expand 5 other endpoint schemas (Product details, Cart GET/POST, Checkout, Orders)</b></summary>
+
+#### GET /api/products/:id
 - **Contract Goal:** Validates that retrieving a single product by its ID returns a single JSON object matching the properties of a product entity.
 - **Test Script:**
 ```javascript
@@ -531,7 +536,7 @@ pm.test("Product detail matches JSON Schema Contract", function () {
 });
 ```
 
-#### 4. GET /api/cart
+#### GET /api/cart
 - **Contract Goal:** Verifies that retrieving the shopping cart returns an array of cart items, each item representing a product along with a quantity indicator.
 - **Test Script:**
 ```javascript
@@ -561,7 +566,7 @@ pm.test("Cart items match JSON Schema Contract", function () {
 });
 ```
 
-#### 5. POST /api/cart
+#### POST /api/cart
 - **Contract Goal:** Validates that successfully adding a product to the cart returns a status message indicating the operation's outcome.
 - **Test Script:**
 ```javascript
@@ -585,7 +590,7 @@ pm.test("Add to cart response matches JSON Schema Contract", function () {
 });
 ```
 
-#### 6. POST /api/checkout
+#### POST /api/checkout
 - **Contract Goal:** Asserts that completing the checkout workflow returns a status code of `200 OK` and a structured response containing a confirmation message and the newly generated order identifier (`orderId`).
 - **Test Script:**
 ```javascript
@@ -610,7 +615,7 @@ pm.test("Checkout response matches JSON Schema Contract", function () {
 });
 ```
 
-#### 7. GET /api/orders/my-orders
+#### GET /api/orders/my-orders
 - **Contract Goal:** Validates that fetching the user's order history returns an array of order objects tracking order identifiers, total amount, shipping addresses, statuses, and timestamps.
 - **Test Script:**
 ```javascript
@@ -641,8 +646,9 @@ pm.test("Orders list matches JSON Schema Contract", function () {
     pm.response.to.have.jsonSchema(ordersSchema);
 });
 ```
+</details>
 
-#### 8. POST /api/apply-coupon
+#### 3. POST /api/apply-coupon
 - **Contract Goal:** Asserts that applying a valid discount coupon returns a success status boolean flag, the coupon ID, the discount amount deducted, the final checkout amount, and a friendly message.
 - **Test Script:**
 ```javascript
@@ -661,6 +667,7 @@ const couponSchema = {
 
 // 2. Validate the response status code is 200 OK
 pm.test("Status code is 200 OK", function () {
+    pm.environment.set("discount_amount", pm.response.json().discount_amount);
     pm.response.to.have.status(200);
 });
 
@@ -670,7 +677,7 @@ pm.test("Coupon validation matches JSON Schema Contract", function () {
 });
 ```
 
-#### 9. Negative Testing: Error Response Contracts
+#### 4. Negative Testing: Error Response Contracts
 Testing error conditions is a vital part of contract testing. We must guarantee that the API returns a consistent error envelope when things go wrong so that client applications can handle failures gracefully without crashing.
 The global contract for errors in the EShop SUT specifies a `400 Bad Request`, `401 Unauthorized`, or `404 Not Found` response with a JSON object containing a mandatory string property `error`.
 
