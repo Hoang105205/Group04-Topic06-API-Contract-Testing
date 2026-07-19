@@ -1,4 +1,4 @@
-# User Guide: API Contract Testing with Postman & Postbot
+# User Guide: API & Contract Testing with Postman & Postbot
 
 ## Section 1: Introduction
 
