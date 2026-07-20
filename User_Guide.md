@@ -1270,41 +1270,7 @@ Postbot is a solid tool for quickly writing structural tests (schema, data types
 
 ---
 
-## Section 6: Failure Modes
-
-This section presents 3 systemic "failure modes" identified through hands-on testing of Postbot on the EShop SUT system, primarily via the `POST /api/apply-coupon` endpoint.
-
-| Test Case | Manual | Postbot | Notes |
-|---|---|---|---|
-| Valid coupon → 200 | ✅ | ⚠️ Passes but misses the data bug (default mode) | Response returns 200 but `discount_amount = -4,500,000` (incorrect) |
-| Invalid coupon → error | ✅ | ✅ Passes, but only checks "an error field exists as a string," not whether the content matches the context | |
-| Expired coupon → error | ✅ | ✅ Same as above | |
-| Below minimum order → error | ✅ | ✅ Same as above | |
-| Max uses exceeded → error | ✅ (clearly caught the bug) | ❌ Postbot is "fooled" | See section 6.2 |
-| Discount formula is correct | ✅ (clearly caught the bug) | ❌ default / ✅ with custom prompt | |
-| Edge case: total_amount = 0 | ✅ (system handles it correctly, not a bug) | Not yet needed | |
-
-#### 5.3.5. What Postbot Does Well
-
-- Quickly generates basic structural tests: status code, response time, Content-Type, data types (`number`, `string`), field existence.
-- For error responses (4xx), Postbot can still write a separate branch (`if (statusCode === 400) {...}`), showing reasonably good branching by status code.
-- Saves significant time on writing boilerplate tests compared to doing everything manually.
-
-#### 5.3.6. Where Postbot Falls Short
-
-- **Doesn't cross-check business rules:** in default mode, Postbot only infers tests from a single sample response. If that response contains a bug (e.g. an incorrect percentage calculation), Postbot will write a test confirming the wrong value as "correct" instead of catching the bug.
-- **Error-case tests stay superficial:** even though it can generate a branch for error handling, Postbot only checks "an error field exists, is a non-empty string" — it doesn't distinguish whether the error content actually matches the specific context (expired / not found / below threshold).
-- **Can't test stateful business rules:** Postbot only analyzes one request-response at a time and has no concept of prior call history. In the "exceeded usage limit" case, because the response (due to a system bug) still returned success, Postbot had no way of knowing this should have been rejected.
-
-#### 5.3.7. Free Tier Limitations
-
-- 50 AI credits/month; each Postbot interaction uses 1 credit.
-- English only.
-- Requires an actual response (the request must already have been sent) before Postbot can generate tests.
-
-#### 5.3.8. Conclusion
-
-Postbot is a solid tool for quickly writing structural tests (schema, data types, status codes), but it cannot replace human testing judgment when it comes to cross-checking business logic or verifying stateful constraints. The most effective approach is to combine both: use Postbot to quickly generate basic structural tests, then manually add or fix assertions related to business logic based on the system's specification.
+## Section 6: Failure Models
 ---
 
 ## 6.1. FM1 — Anchoring on a Buggy Sample Response ("Learning the Bug Instead of Catching It")
