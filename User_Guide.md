@@ -1,4 +1,4 @@
-# User Guide: API Contract Testing with Postman & Postbot
+# User Guide: API & Contract Testing with Postman & Postbot
 
 ## Section 1: Introduction
 
@@ -398,6 +398,8 @@ In large microservice architectures, contract testing is often **consumer-driven
 
 ### 4b.2 — How Postman Implements Contract Testing
 
+> **Quick Start & Navigation Note:** If you are a beginner and want a step-by-step walkthrough on how to navigate Postman's script workspace, enter scripts, and run test assertions for the first time, please see [Section 5.1a — Test Scripts](#51a--test-scripts) for a detailed visual guide before studying the schemas below.
+
 Postman provides robust, built-in features that make it easy to write and maintain contract tests without setting up complex testing frameworks.
 
 #### 1. JSON Schema Validation via `pm.response.to.have.jsonSchema()`
@@ -502,7 +504,10 @@ pm.test("Products list matches JSON Schema Contract", function () {
 });
 ```
 
-#### 3. GET /api/products/:id
+<details>
+<summary><b>Click to expand 5 other endpoint schemas (Product details, Cart GET/POST, Checkout, Orders)</b></summary>
+
+#### GET /api/products/:id
 - **Contract Goal:** Validates that retrieving a single product by its ID returns a single JSON object matching the properties of a product entity.
 - **Test Script:**
 ```javascript
@@ -531,7 +536,7 @@ pm.test("Product detail matches JSON Schema Contract", function () {
 });
 ```
 
-#### 4. GET /api/cart
+#### GET /api/cart
 - **Contract Goal:** Verifies that retrieving the shopping cart returns an array of cart items, each item representing a product along with a quantity indicator.
 - **Test Script:**
 ```javascript
@@ -561,7 +566,7 @@ pm.test("Cart items match JSON Schema Contract", function () {
 });
 ```
 
-#### 5. POST /api/cart
+#### POST /api/cart
 - **Contract Goal:** Validates that successfully adding a product to the cart returns a status message indicating the operation's outcome.
 - **Test Script:**
 ```javascript
@@ -585,7 +590,7 @@ pm.test("Add to cart response matches JSON Schema Contract", function () {
 });
 ```
 
-#### 6. POST /api/checkout
+#### POST /api/checkout
 - **Contract Goal:** Asserts that completing the checkout workflow returns a status code of `200 OK` and a structured response containing a confirmation message and the newly generated order identifier (`orderId`).
 - **Test Script:**
 ```javascript
@@ -610,7 +615,7 @@ pm.test("Checkout response matches JSON Schema Contract", function () {
 });
 ```
 
-#### 7. GET /api/orders/my-orders
+#### GET /api/orders/my-orders
 - **Contract Goal:** Validates that fetching the user's order history returns an array of order objects tracking order identifiers, total amount, shipping addresses, statuses, and timestamps.
 - **Test Script:**
 ```javascript
@@ -641,8 +646,9 @@ pm.test("Orders list matches JSON Schema Contract", function () {
     pm.response.to.have.jsonSchema(ordersSchema);
 });
 ```
+</details>
 
-#### 8. POST /api/apply-coupon
+#### 3. POST /api/apply-coupon
 - **Contract Goal:** Asserts that applying a valid discount coupon returns a success status boolean flag, the coupon ID, the discount amount deducted, the final checkout amount, and a friendly message.
 - **Test Script:**
 ```javascript
@@ -661,6 +667,7 @@ const couponSchema = {
 
 // 2. Validate the response status code is 200 OK
 pm.test("Status code is 200 OK", function () {
+    pm.environment.set("discount_amount", pm.response.json().discount_amount);
     pm.response.to.have.status(200);
 });
 
@@ -670,7 +677,7 @@ pm.test("Coupon validation matches JSON Schema Contract", function () {
 });
 ```
 
-#### 9. Negative Testing: Error Response Contracts
+#### 4. Negative Testing: Error Response Contracts
 Testing error conditions is a vital part of contract testing. We must guarantee that the API returns a consistent error envelope when things go wrong so that client applications can handle failures gracefully without crashing.
 The global contract for errors in the EShop SUT specifies a `400 Bad Request`, `401 Unauthorized`, or `404 Not Found` response with a JSON object containing a mandatory string property `error`.
 
@@ -844,6 +851,14 @@ pm.test("Order placed successfully (Status 200)", function () {
 
 *Note: Currently, the API returns a `200 OK` status code upon successful addition instead of the standard `201 Created` typically used for resource creation.*
 
+After executing your entire automated sequence, you can visually verify that all data was successfully extracted and stored.
+
+![alt text](User_Guide_image/postman_enviroment_open.png)
+
+![alt text](User_Guide_image/postman_enviroment_final_variable.png)
+
+*Note: To verify these stored values, click on your active environment name (**EShop SUT Env** here in our current example) in the top right corner, then click the **Open Environment** button. You will see all your chained variables mapped perfectly. Notice how pre-existing variables like `auth_token` and `user_id` were seamlessly updated with fresh data, while new contextual variables like `product_name`, `product_price`, `product_id`, and `sum_money` were dynamically generated during the flow.*
+
 By mastering this extraction, calculation, and injection pattern, you can fully automate complex, multi-step business workflows without any manual intervention.
 
 **Data Validation:** Beyond extracting variables, Post-response scripts are crucial for validating the structure and performance of the returned data. We achieve this using the built-in Chai.js assertion library inside the `pm.expect()` block.
@@ -988,7 +1003,7 @@ A robust API should strictly validate the format of incoming payloads. If a clie
 For example, the `POST /api/admin/import-products` endpoint expects an array of products. If you send an empty array or a plain object/string, the API must reject it:
 
 ```javascript
-pm.test("Invalid payload format (missing or not an array) returns 200 (400 in reality)", function () {
+pm.test("Invalid payload returns 200 (SUT bug — should be 400)", function () {
     pm.response.to.have.status(200);
 });
 ```
@@ -1018,7 +1033,7 @@ pm.test("Invalid order state transition is rejected (Status 400)", function () {
 - **Illegal Actions:** Trying to cancel an order via `PUT /api/orders/{{order_id}}/cancel` when its status is already "delivered" or "canceled".  
 
 ```javascript
-pm.test("Invalid order state transition is rejected (Status 400)", function () {
+pm.test("Cannot cancel a delivered/canceled order (Status 400)", function () {
     pm.response.to.have.status(400);
     pm.expect(pm.response.json().error).to.include('Cannot cancel this order');
 });
@@ -1141,7 +1156,7 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
 1. **Prepare the Data File (`login_data.csv`)**:
    Create a CSV file with headers mapping to variables used in your requests. Each row represents a single iteration:
    ```csv
-   username,password,expected_status
+   email,password,expected_status
    test@eshop.com,Test1234!,200
    bob@eshop.com,Password456!,200
    test@eshop.com,wrong_password,401
@@ -1158,15 +1173,15 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
    });
    ```
 
-3. **Running Iterations in Collection Runner**: There are 2 ways to feed test data:
-   - **Method 1: Using a Test Data File (Requires an Enterprise account)**:
+3. **Running Iterations in Collection Runner**: There are 2 ways to feed test data **(Both require an Enterprise account)**:
+   - **Method 1: Using a Test Data File**:
      - In the Collection Runner configuration, look for the **Test data file** section.
      - Click **Select File** and upload the data file directly (e.g., `login_data.csv`).
      - Postman will automatically set the number of **Iterations** to match the rows in the file and run them sequentially.
 
         ![alt text](User_Guide_image/postman_ddt_runner.png)
 
-   - **Method 2: Using Datasets & Data Views (Free for all account types)**:
+   - **Method 2: Using Datasets & Data Views**:
      - **Create a Dataset**: Click the plus (`+`) icon next to the **Datasets** section in the Collection Runner configuration to create a new dataset and name it (e.g., `Test login dataset`).
 
        ![alt text](User_Guide_image/postman_createdataset.png)
@@ -1182,9 +1197,9 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
      
 
 4. **Running Iterations in Newman**:
-   Run the test suite using the `--iteration-data` (or shorthand `-d`) flag and specify the data file. For example, running the EShop login iteration tests:
+   Run the test suite using the `--iteration-data` (or shorthand `-d`) and `--folder` flag (only if you want to run a sub folder or a specific api) and specify the data file. For example, running the EShop login iteration tests:
    ```bash
-   newman run "EShop_API_Collection.json" -e "EShop_Environment.json" -d "login_data.csv" --iteration-count 5
+   newman run "EShop_API_Collection.json" --folder "api/login" -e "EShop_Environment.json" -d "login_data.csv" --iteration-count 5
    ```
 
 
@@ -1259,12 +1274,141 @@ Postbot is a solid tool for quickly writing structural tests (schema, data types
 
 This section presents 3 systemic "failure modes" identified through hands-on testing of Postbot on the EShop SUT system, primarily via the `POST /api/apply-coupon` endpoint.
 
+| Test Case | Manual | Postbot | Notes |
+|---|---|---|---|
+| Valid coupon → 200 | ✅ | ⚠️ Passes but misses the data bug (default mode) | Response returns 200 but `discount_amount = -4,500,000` (incorrect) |
+| Invalid coupon → error | ✅ | ✅ Passes, but only checks "an error field exists as a string," not whether the content matches the context | |
+| Expired coupon → error | ✅ | ✅ Same as above | |
+| Below minimum order → error | ✅ | ✅ Same as above | |
+| Max uses exceeded → error | ✅ (clearly caught the bug) | ❌ Postbot is "fooled" | See section 6.2 |
+| Discount formula is correct | ✅ (clearly caught the bug) | ❌ default / ✅ with custom prompt | |
+| Edge case: total_amount = 0 | ✅ (system handles it correctly, not a bug) | Not yet needed | |
+
+#### 5.3.5. What Postbot Does Well
+
+- Quickly generates basic structural tests: status code, response time, Content-Type, data types (`number`, `string`), field existence.
+- For error responses (4xx), Postbot can still write a separate branch (`if (statusCode === 400) {...}`), showing reasonably good branching by status code.
+- Saves significant time on writing boilerplate tests compared to doing everything manually.
+
+#### 5.3.6. Where Postbot Falls Short
+
+- **Doesn't cross-check business rules:** in default mode, Postbot only infers tests from a single sample response. If that response contains a bug (e.g. an incorrect percentage calculation), Postbot will write a test confirming the wrong value as "correct" instead of catching the bug.
+- **Error-case tests stay superficial:** even though it can generate a branch for error handling, Postbot only checks "an error field exists, is a non-empty string" — it doesn't distinguish whether the error content actually matches the specific context (expired / not found / below threshold).
+- **Can't test stateful business rules:** Postbot only analyzes one request-response at a time and has no concept of prior call history. In the "exceeded usage limit" case, because the response (due to a system bug) still returned success, Postbot had no way of knowing this should have been rejected.
+
+#### 5.3.7. Free Tier Limitations
+
+- 50 AI credits/month; each Postbot interaction uses 1 credit.
+- English only.
+- Requires an actual response (the request must already have been sent) before Postbot can generate tests.
+
+#### 5.3.8. Conclusion
+
+Postbot is a solid tool for quickly writing structural tests (schema, data types, status codes), but it cannot replace human testing judgment when it comes to cross-checking business logic or verifying stateful constraints. The most effective approach is to combine both: use Postbot to quickly generate basic structural tests, then manually add or fix assertions related to business logic based on the system's specification.
 ---
 
 ## 6.1. FM1 — Anchoring on a Buggy Sample Response ("Learning the Bug Instead of Catching It")
 
 **Description:**
 In default mode (no additional guidance), Postbot only looks at the one sample response currently displayed to infer its assertions. If that sample response contains a bug, Postbot will write a test that confirms the bug as correct behavior, instead of cross-checking it against actual business logic.
+
+**Concrete example (from real testing):**
+For `POST /api/apply-coupon`, body `{ "code": "SAVE10", "total_amount": 500000, "user_id": 1 }`, the system returned:
+```json
+{
+  "success": true,
+  "coupon_id": 1,
+  "discount_amount": -4500000,
+  "final_amount": 5000000,
+  "message": "Áp dụng thành công! Giảm 10%"
+}
+```
+Per the specification (a 10% percent coupon on a total of 500,000₫), `discount_amount` should be **50,000** (positive), not **-4,500,000**. Yet Postbot, in default mode, generated this assertion:
+```javascript
+pm.test("Discount amount is negative (a reduction)", function () {
+    pm.expect(jsonData.discount_amount).to.be.below(0);
+});
+```
+— meaning Postbot treated the negative `discount_amount` as the correct expected behavior, when in fact it's a serious calculation bug.
+
+**Consequence:**
+All 8/8 tests Postbot generated passed (green), giving the impression the API works perfectly fine, while the discount calculation is actually completely wrong — in production this could cause customers to be charged incorrect amounts. Worse, if the backend is later fixed correctly (so `discount_amount` becomes positive), this same test suite would **wrongly fail** on a correct fix.
+
+**Prevention:**
+- Don't blindly trust tests Postbot generates in default mode, especially for fields involving numerical calculations (money, quantities, ratios).
+- Know the correct business formula in advance (from the specification) and provide it via a **custom prompt** so Postbot can cross-check against it, instead of letting it guess from a single sample. Example effective prompt:
+  > *"Assert that discount_amount equals total_amount × 10 / 100 exactly, and must be a positive number."*
+- Always keep at least one manually written test based on the known-correct formula, independent of Postbot, as a cross-check.
+
+---
+
+## 6.2. FM2 — Happy-Path Only / Superficial Error-Case Tests
+
+**Description:**
+Postbot can generate a separate branch for error responses (based on status code), but these assertions only check **surface-level structure** — that an error field exists, is a string, is non-empty — without checking whether **the error content actually matches the specific business context**. In addition, Postbot cannot test constraints that depend on **state/history** (stateful business rules), since it only analyzes one request-response at a time.
+
+**Concrete example — superficial error tests:**
+Three genuinely different error scenarios were tested on the same endpoint:
+
+| Scenario | Actual Response | Assertion Postbot Generated |
+|---|---|---|
+| Expired coupon (`EXPIRED`) | `{"error": "Mã giảm giá đã hết hạn"}` | `expect(error).to.be.a('string').and.not.empty` |
+| Nonexistent coupon (`FAKE99`) | `{"error": "Mã giảm giá không tồn tại..."}` | `expect(error).to.be.a('string')` |
+| Below minimum order (`BIGBUY`, low total) | `{"error": "Đơn hàng chưa đủ giá trị tối thiểu..."}` | `expect(jsonData).to.have.property("error")` |
+
+All three assertions are **essentially identical** — they only confirm "there's an error string" — even though the three failure causes are completely different in nature (expired / nonexistent / below threshold).
+
+**Concrete example — failing to catch a stateful bug:**
+The EShop SUT system has a bug: it doesn't check the per-user usage limit on coupons (`SAVE10` is limited to 1 use/person per spec, but sending the exact same request a second time is still accepted with `success: true`). Because the response looked identical to a normal successful case, Postbot generated 8/9 passing tests, completely failing to recognize this was a case that should have been rejected — since it has no concept of "has this coupon already been used before."
+
+**Consequence:**
+If the backend has a logic bug (e.g. accidentally swapping the "expired" message with the "not found" message), or if a stateful constraint is missing (like the usage limit), the test suite Postbot generates **still passes normally**, with no ability to detect it.
+
+**Prevention:**
+- For each error branch, manually add assertions that check the **specific error message or error code** matching the actual cause, not just the data type.
+- For stateful constraints (usage limits, operation order, etc.), design a sequential multi-request test scenario (call twice, verify the second call is rejected) — this is beyond Postbot's capability and must be designed by the tester.
+- Refer to the Negative Testing section (5.1b) for a more complete approach to designing negative test cases, not relying on Postbot alone.
+
+---
+
+## 6.3. FM3 — Collection Runner Hides the Root Cause
+
+**Description:**
+When running requests through the Collection Runner, error messages shown are usually limited to a status code and a generic assertion message, without explaining the root cause. More notably: the Collection Runner has an environment selector that is **independent** from the environment dropdown on the main Postman screen — if the correct environment isn't selected inside the Runner window itself, all variables (`{{auth_token}}`, `{{base_url}}`...) will fail to resolve when sending the request, causing the request to actually be malformed while the Runner gives no warning about this.
+
+**Concrete example (from real testing):**
+Created a collection "FM3 test" containing `GET /api/cart` (with a test `pm.response.to.have.status(200)`) and `POST /api/apply-coupon`, and ran it via Collection Runner. The Runner displayed:
+```
+FAIL  Status code is 200 | AssertionError: expected response to have status code 200 but got 403
+```
+Looking at this line alone, it's easy to wrongly assume the cause is an expired token, insufficient permissions, or a backend bug. Opening the Console (Ctrl+Alt+C) to inspect the actual request sent revealed the header:
+```
+Authorization: Bearer {{auth_token}}
+```
+— meaning the `{{auth_token}}` variable was **never substituted with an actual value**; Postman sent the literal placeholder string as-is. The real cause was that the Collection Runner was running with the wrong (or no) environment selected, independent of the environment chosen on the main screen — not anything related to whether the token itself was valid or expired.
+
+**Consequence:**
+Testers can easily misattribute the error to an authentication/authorization issue on the backend, wasting time debugging in the wrong direction (re-checking backend logic, generating a new token...) when the real cause is simply a misconfigured environment selection in the Runner — a tester-side configuration mistake, not a system bug.
+
+**Prevention:**
+- Before clicking Run in the Collection Runner, always check the environment dropdown **inside the Runner window itself** — don't assume it automatically uses whatever environment is selected on the main screen.
+- When encountering a confusing error in the Runner (unusual status code, malformed URL), always open the Console (Ctrl+Alt+C) to inspect the actual request headers/URL/body sent before concluding the cause.
+- Warning sign that a variable failed to resolve: request headers or URLs still display the literal `{{variable_name}}` syntax instead of an actual value.
+
+---
+
+## Overall Summary
+
+All three failure modes above point to one common theme: Postbot (and AI-generated tests in general) performs well at the level of **data structure** (types, field existence, status codes) but cannot independently reason about **business logic** or **stateful/historical context**. The tester's role remains irreplaceable: understanding the specification, knowing the expected correct behavior in advance, and actively verifying rather than blindly trusting AI output.
+
+This section presents 3 systemic "failure modes" identified through hands-on testing of Postbot on the EShop SUT system, primarily via the `POST /api/apply-coupon` endpoint.
+
+---
+
+## 6.1. FM1 — Anchoring on a Buggy Sample Response ("Learning the Bug Instead of Catching It")
+
+**Description:**
+In default mode (no additional guidance), Postbot only looks at the one sample response currently displayed to infer its assertions. If that sample response contains a bug, Postbot will write a test that **confirms the bug as correct behavior**, instead of cross-checking it against actual business logic.
 
 **Concrete example (from real testing):**
 For `POST /api/apply-coupon`, body `{ "code": "SAVE10", "total_amount": 500000, "user_id": 1 }`, the system returned:
@@ -1501,5 +1645,30 @@ error: reporter "html" could not be loaded
 
 ## Section 8: References
 
-### AI Disclosure (theo Seminar_Guide.docx Section 7 — AI Policy)
+### Official Documentation
+
+| Resource | Link |
+|----------|------|
+| Postman Learning Center | [https://learning.postman.com](https://learning.postman.com) |
+| Postman Test Script Examples | [https://learning.postman.com/docs/tests-and-scripts/write-scripts/test-examples/](https://learning.postman.com/docs/tests-and-scripts/write-scripts/test-examples/) |
+| Postman Sandbox API Reference (`pm.*`) | [https://learning.postman.com/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/overview/](https://learning.postman.com/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/overview/) |
+| Postman AI Features (Postbot) | [https://learning.postman.com/docs/getting-started/basics/about-ai/](https://learning.postman.com/docs/getting-started/basics/about-ai/) |
+| Newman CLI — GitHub | [https://github.com/postmanlabs/newman](https://github.com/postmanlabs/newman) |
+| Newman HTML Reporter — GitHub | [https://github.com/postmanlabs/newman-reporter-html](https://github.com/postmanlabs/newman-reporter-html) |
+
+### Tools & Downloads
+
+| Tool | Link |
+|------|------|
+| Postman Desktop App | [https://www.postman.com/downloads/](https://www.postman.com/downloads/) |
+| Node.js (includes npm) | [https://nodejs.org/](https://nodejs.org/) |
+
+### Contract Testing & Standards
+
+| Resource | Link |
+|----------|------|
+| JSON Schema (draft-07) | [https://json-schema.org/](https://json-schema.org/) |
+| Pact — Consumer-Driven Contract Testing | [https://pact.io](https://pact.io) |
+| PactFlow — What is CDC? | [https://pactflow.io/what-is-consumer-driven-contract-testing/](https://pactflow.io/what-is-consumer-driven-contract-testing/) |
+| Postman Mock Servers | [https://learning.postman.com/docs/design-apis/mock-apis/set-up-mock-servers/](https://learning.postman.com/docs/design-apis/mock-apis/set-up-mock-servers/) |
 
