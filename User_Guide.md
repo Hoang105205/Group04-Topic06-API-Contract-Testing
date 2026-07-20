@@ -1205,6 +1205,8 @@ Postbot is Postman's built-in AI feature that automatically generates test scrip
 5. Send the request again to run the tests and see PASS/FAIL results
 6. Keep it if it's appropriate, or edit it if needed
 
+![Postbot generating test for GET /api/products](User_Guide_image/postbot-get-products_1.png)
+![Postbot generating test for GET /api/products](User_Guide_image/postbot-get-products_2.png)
 #### 5.3.3. Custom Prompts — Guiding Postbot with Specific Instructions
 
 In default mode, Postbot only looks at one sample response to guess what to test — this has significant limitations (see 5.3.6). Users can type a specific instruction directly into the chat to "teach" Postbot the correct business logic, for example:
@@ -1212,6 +1214,9 @@ In default mode, Postbot only looks at one sample response to guess what to test
 > *"Write a test that calculates the expected discount as total_amount \* 10 / 100 for a percent coupon, and asserts discount_amount matches this calculation exactly."*
 
 When given a clear formula like this, Postbot can write tests that check the actual numbers, instead of only checking generic data types.
+
+![Postbot generating tests with custom prompts](User_Guide_image/custom-prompt-fail-detected_1.png)
+![Postbot generating tests with custom prompts](User_Guide_image/custom-prompt-fail-detected_2.png)
 
 #### 5.3.4. Postbot vs. Manual Tests — Real Experiment Data on EShop SUT
 
@@ -1238,19 +1243,19 @@ Tested on the `POST /api/apply-coupon` endpoint using the system's 4 built-in co
 - **Doesn't cross-check business rules:** in default mode, Postbot only infers tests from a single sample response. If that response contains a bug (e.g. an incorrect percentage calculation), Postbot will write a test confirming the wrong value as "correct" instead of catching the bug.
 - **Error-case tests stay superficial:** even though it can generate a branch for error handling, Postbot only checks "an error field exists, is a non-empty string" — it doesn't distinguish whether the error content actually matches the specific context (expired / not found / below threshold).
 - **Can't test stateful business rules:** Postbot only analyzes one request-response at a time and has no concept of prior call history. In the "exceeded usage limit" case, because the response (due to a system bug) still returned success, Postbot had no way of knowing this should have been rejected.
-
+![Postbot generating all past tests](User_Guide_image/discount-bug-passed-tests.png)
 #### 5.3.7. Free Tier Limitations
 
 - 50 AI credits/month; each Postbot interaction uses 1 credit.
-- English only.
 - Requires an actual response (the request must already have been sent) before Postbot can generate tests.
 
 #### 5.3.8. Conclusion
 
 Postbot is a solid tool for quickly writing structural tests (schema, data types, status codes), but it cannot replace human testing judgment when it comes to cross-checking business logic or verifying stateful constraints. The most effective approach is to combine both: use Postbot to quickly generate basic structural tests, then manually add or fix assertions related to business logic based on the system's specification.
+
 ---
 
-## Section 6: Failure Modes — 3 Cách Postman/Postbot Đánh Lừa Bạn
+## Section 6: Failure Modes
 
 This section presents 3 systemic "failure modes" identified through hands-on testing of Postbot on the EShop SUT system, primarily via the `POST /api/apply-coupon` endpoint.
 
@@ -1259,7 +1264,7 @@ This section presents 3 systemic "failure modes" identified through hands-on tes
 ## 6.1. FM1 — Anchoring on a Buggy Sample Response ("Learning the Bug Instead of Catching It")
 
 **Description:**
-In default mode (no additional guidance), Postbot only looks at the one sample response currently displayed to infer its assertions. If that sample response contains a bug, Postbot will write a test that **confirms the bug as correct behavior**, instead of cross-checking it against actual business logic.
+In default mode (no additional guidance), Postbot only looks at the one sample response currently displayed to infer its assertions. If that sample response contains a bug, Postbot will write a test that confirms the bug as correct behavior, instead of cross-checking it against actual business logic.
 
 **Concrete example (from real testing):**
 For `POST /api/apply-coupon`, body `{ "code": "SAVE10", "total_amount": 500000, "user_id": 1 }`, the system returned:
