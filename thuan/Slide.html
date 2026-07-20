@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T06 — API & Contract Testing with Postman + Postbot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FAF6F0;
+      /* Cream background matching original template */
+      --surface: #ffffff;
+      --surface-2: #f1f3f5;
+      --ink: #1e1b18;
+      /* Dark brown-black for headers */
+      --ink-2: #4a4540;
+      /* Muted brown-gray for text */
+      --ink-3: #8c847a;
+      /* Muted gray for numbers */
+      --line: #eae3d9;
+      /* Light border */
+      --accent: #a9845b;
+      /* Gold/Bronze accent color */
+      --accent-light: #f4efeb;
+      --green: #059669;
+      --green-light: #ecfdf5;
+      --red: #dc2626;
+      --red-light: #fef2f2;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --purple: #7c3aed;
+      --purple-light: #f5f3ff;
+      --font: 'Inter', -apple-system, system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'SF Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--ink);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .slide {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      padding: clamp(32px, 5vh, 48px) clamp(40px, 6vw, 72px);
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    /* Slide Header containing Title and Slide Number - absolute at top */
+    .slide-header {
+      position: absolute;
+      top: clamp(24px, 4vh, 40px);
+      left: clamp(40px, 6vw, 72px);
+      right: clamp(40px, 6vw, 72px);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: clamp(8px, 1.2vh, 14px);
+    }
+
+    .slide-header h2 {
+      font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -.025em;
+      color: var(--ink);
+      margin-bottom: 0;
+    }
+
+    .slide-header .sn {
+      font: 700 clamp(12px, 1.2vw, 15px) var(--font);
+      color: var(--ink-3);
+      letter-spacing: .06em;
+    }
+
+    /* Content wrapper to center body elements vertically */
+    .slide-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      flex-grow: 1;
+      width: 100%;
+      margin-top: clamp(60px, 8vh, 88px);
+      /* Leave space for absolute header */
+      gap: clamp(16px, 2.5vh, 28px);
+    }
+
+    /* Typography */
+    h1 {
+      font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -.035em;
+      color: var(--ink);
+      margin-bottom: clamp(12px, 2vh, 24px);
+    }
+
+    h3 {
+      font-size: clamp(1.1rem, 1.4vw, 1.35rem);
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    p,
+    li {
+      font-size: clamp(.82rem, 1.1vw, 0.98rem);
+      line-height: 1.55;
+      color: var(--ink-2);
+    }
+
+    .subtitle {
+      font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+      color: var(--ink-3);
+      font-weight: 400;
+      margin-top: clamp(6px, 1vh, 12px);
+      max-width: 660px;
+    }
+
+    /* Tags */
+    .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 5px;
+      font: 700 clamp(10px, 1vw, 12px) var(--font);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .tag-blue {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .tag-green {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .tag-red {
+      background: var(--red-light);
+      color: var(--red);
+    }
+
+    .tag-amber {
+      background: var(--amber-light);
+      color: var(--amber);
+    }
+
+    .tag-purple {
+      background: var(--purple-light);
+      color: var(--purple);
+    }
+
+    /* Cards matching PPTX design exactly */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: clamp(16px, 2vw, 24px);
+      width: 100%;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card-accent {
+      border-top: 5px solid var(--accent);
+    }
+
+    .card-blue {
+      border-top: 5px solid var(--accent);
+    }
+
+    .card-green {
+      border-top: 5px solid var(--green);
+    }
+
+    .card-red {
+      border-top: 5px solid var(--red);
+    }
+
+    .card-purple {
+      border-top: 5px solid var(--purple);
+    }
+
+    .card-amber {
+      border-top: 5px solid var(--amber);
+    }
+
+    .card-solid {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: clamp(14px, 1.6vw, 22px);
+    }
+
+    /* Card number badge at top left */
+    .card-num {
+      font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .card-num.red {
+      color: var(--red);
+    }
+
+    .card-num.green {
+      color: var(--green);
+    }
+
+    .card-num.purple {
+      color: var(--purple);
+    }
+
+    /* Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(16px, 2vw, 28px);
+      width: 100%;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: clamp(16px, 2vw, 28px);
+      width: 100%;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(10px, 1.2vw, 18px);
+      width: 100%;
+    }
+
+    /* Callout warning/info boxes matching PPTX layout - removed margin-top: auto */
+    .callout {
+      padding: clamp(12px, 1.8vh, 20px) clamp(16px, 2vw, 24px);
+      border-radius: 6px;
+      font-size: clamp(.85rem, 1.1vw, 1.0rem);
+      line-height: 1.5;
+      width: 100%;
+    }
+
+    .callout-blue {
+      background: #e8effc;
+      border: 1.5px solid var(--accent);
+    }
+
+    .callout-green {
+      background: var(--green-light);
+      border: 1.5px solid var(--green);
+    }
+
+    .callout-amber {
+      background: var(--amber-light);
+      border: 1.5px solid var(--amber);
+    }
+
+    .callout-red {
+      background: #fef2f2;
+      border: 1.5px solid var(--red);
+    }
+
+    /* Bullet list */
+    .bullet {
+      list-style: none;
+      padding: 0;
+    }
+
+    .bullet li {
+      padding: 4px 0 4px 18px;
+      position: relative;
+      font-size: clamp(.82rem, 1.1vw, 0.98rem);
+    }
+
+    .bullet li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .bullet li.green::before {
+      background: var(--green);
+    }
+
+    .bullet li.red::before {
+      background: var(--red);
+    }
+
+    .bullet li.purple::before {
+      background: var(--purple);
+    }
+
+    /* Table */
+    .tbl {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: clamp(.82rem, 1.1vw, 0.98rem);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .tbl th {
+      background: var(--ink);
+      color: #fff;
+      padding: clamp(10px, 1.2vh, 16px) clamp(12px, 1.4vw, 18px);
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .tbl td {
+      padding: clamp(10px, 1.2vh, 16px) clamp(12px, 1.4vw, 18px);
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .tbl tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tbl tr:nth-child(even) td {
+      background: var(--surface);
+    }
+
+    /* Code block */
+    code,
+    pre {
+      font-family: var(--mono);
+      font-size: clamp(0.78rem, 0.95vw, 0.88rem);
+      color: var(--ink);
+    }
+
+    pre {
+      background: var(--surface);
+      padding: clamp(10px, 1.2vh, 16px);
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      overflow-x: auto;
+      width: 100%;
+      line-height: 1.4;
+      margin: 4px 0;
+    }
+
+    /* Nav bar */
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 99;
+    }
+
+    .nav button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 22px;
+      border-radius: 6px;
+      font: 600 13px var(--font);
+      cursor: pointer;
+    }
+
+    .nav button:hover {
+      filter: brightness(1.1);
+    }
+
+    .nav button:disabled {
+      background: var(--ink-3);
+      opacity: .35;
+      cursor: default;
+    }
+
+    .nav span {
+      color: rgba(255, 255, 255, .5);
+      font: 600 12px var(--font);
+    }
+
+    /* Title layout special */
+    .slide-title-hero {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    @media print {
+      .slide {
+        display: flex !important;
+        page-break-after: always;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .nav {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Slide 1: Title Slide -->
+  <div class="slide slide-title-hero active">
+    <div class="tag tag-blue">SEMINAR TOPIC 06</div>
+    <h1 style="font-size: clamp(2.4rem, 5vw, 3.8rem); line-height: 1.15; margin-bottom: 20px;">T06 — API &
+      Contract<br>Testing with Postman + Postbot</h1>
+    <div class="subtitle"
+      style="text-align: center; font-weight: 500; color: var(--ink-2); font-size: clamp(1.05rem, 1.8vw, 1.35rem);">
+      Group 04 | Course: Software Testing</div>
+    <p
+      style="margin-top: 36px; color: var(--ink-3); line-height: 1.6; text-align: center; font-size: clamp(0.85rem, 1.15vw, 1rem);">
+      Presenters:<br>
+      23127047 - Hoang &bull; 23127052 - Huy &bull; 23127104 - Phuong &bull; 23127125 - Thuan &bull; 23127462 - Quang
+    </p>
+  </div>
+
+  <!-- Slide 2: Why API Testing? -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Why API Testing?</h2>
+      <span class="sn">02 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-3">
+        <div class="card card-accent">
+          <div class="card-num">01</div>
+          <h3>System Backbone</h3>
+          <p>APIs connect Frontend, Backend, and third-party integrations. An API failure paralyzes the entire system
+            immediately.</p>
+        </div>
+        <div class="card card-accent">
+          <div class="card-num">02</div>
+          <h3>Shift-Left Testing</h3>
+          <p>Detect and isolate bugs early in the service logic layer. Fixing API bugs is far cheaper than fixing them
+            at the GUI level.</p>
+        </div>
+        <div class="card card-accent">
+          <div class="card-num">03</div>
+          <h3>Speed & Automation</h3>
+          <p>Execute hundreds of test cases in seconds. Easily integrate into CI/CD pipelines for automated regression
+            testing.</p>
+        </div>
+      </div>
+      <div class="callout callout-red">
+        <strong style="color: var(--red);">CORE REALIZATION:</strong> A critical API bug on the Backend can crash all
+        client platforms (Web, iOS, Android) simultaneously before the UI can handle or display any structured error
+        message.
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Topic Scope -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Topic Scope — T06 Focus Areas</h2>
+      <span class="sn">03 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-3">
+        <div class="card card-accent">
+          <div class="card-num">01</div>
+          <h3>API Functional Testing</h3>
+          <p>Write JavaScript Test Scripts to automate functional validation and business logic checks.</p>
+        </div>
+        <div class="card card-accent">
+          <div class="card-num">02</div>
+          <h3>API Contract Testing</h3>
+          <p>Validate response structures (JSON Schema) between Consumer and Provider to ensure API contracts are not
+            broken.</p>
+        </div>
+        <div class="card card-accent">
+          <div class="card-num">03</div>
+          <h3>AI-Augmented Testing</h3>
+          <p>Use Postbot AI to auto-generate assertions from actual response structures using natural language prompts.
+          </p>
+        </div>
+      </div>
+      <p style="color: var(--ink-3); font-style: italic; font-size: clamp(0.78rem, 1vw, 0.9rem);">
+        * Note: Theoretical differences are compared against Pact (dedicated CDC), but hands-on implementation focuses
+        entirely on Postman.
+      </p>
+    </div>
+  </div>
+
+  <!-- Slide 4: Why Postman? -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Why Postman? — Tool Selection Context</h2>
+      <span class="sn">04 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card card-accent">
+          <h3 style="color: var(--accent); margin-bottom: 8px;">Postman Superiority</h3>
+          <ul class="bullet">
+            <li><strong>Industry Standard:</strong> Used by 35M+ users and major software development organizations
+              worldwide.</li>
+            <li><strong>Visual & Scripted:</strong> Excellent UI support for manual requests and powerful automation
+              script runners.</li>
+            <li><strong>Chai.js Assertion:</strong> Built-in JavaScript sandbox with Chai.js assertion library for
+              flexible test suites.</li>
+          </ul>
+        </div>
+        <div class="card card-purple">
+          <h3 style="color: var(--purple); margin-bottom: 8px;">Postbot AI & EShop SUT Context</h3>
+          <ul class="bullet">
+            <li class="purple"><strong>Postbot AI Assistant:</strong> Generates test scripts using natural language
+              prompts, accelerating test writing.</li>
+            <li class="purple"><strong>Ideal for EShop SUT:</strong> Monolithic Express/Node.js architecture is perfect
+              for lightweight contract testing.</li>
+            <li class="purple"><strong>Cost-Effective:</strong> Free tier provides all core testing features and 50 AI
+              credits per month.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: Key Features Overview -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Key Features Overview</h2>
+      <span class="sn">05 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card card-accent">
+          <div class="card-num">01</div>
+          <h3>Request Builder & Auth</h3>
+          <p>Build REST requests (GET, POST, PUT, DELETE). Inherit Authorization (Bearer Token) at the Collection level
+            for centralized security.</p>
+        </div>
+        <div class="card card-accent">
+          <div class="card-num">02</div>
+          <h3>Variable Chaining</h3>
+          <p>Program dynamic API workflows: Extract JWT tokens from Login response and dynamically inject them as
+            headers in subsequent requests.</p>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card card-accent">
+          <div class="card-num">03</div>
+          <h3>Collection Runner</h3>
+          <p>Run complete integration workflows directly from Postman's GUI, supporting Data-Driven Testing (DDT) with
+            external datasets.</p>
+        </div>
+        <div class="card card-accent">
+          <div class="card-num">04</div>
+          <h3>Newman CLI & Reporter</h3>
+          <p>Execute test suites headless from terminal. Export rich reports (HTML, JUnit XML) to integrate into CI/CD
+            pipelines.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 6: Basic API Requests & Status Codes -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Basic API Requests & Status Codes</h2>
+      <span class="sn">06 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-4">
+        <div class="card card-green">
+          <span class="tag tag-green">GET</span>
+          <h3>Read Data</h3>
+          <p>Query resource details.<br>Status: 200 / 404</p>
+        </div>
+        <div class="card card-blue">
+          <span class="tag tag-blue">POST</span>
+          <h3>Create Data</h3>
+          <p>Create new resources.<br>Status: 200 / 201</p>
+        </div>
+        <div class="card card-amber">
+          <span class="tag tag-amber">PUT</span>
+          <h3>Update Data</h3>
+          <p>Modify existing data.<br>Status: 200 OK</p>
+        </div>
+        <div class="card card-red">
+          <span class="tag tag-red">DELETE</span>
+          <h3>Remove Data</h3>
+          <p>Remove resources.<br>Status: 200 / 204</p>
+        </div>
+      </div>
+      <div class="callout callout-blue">
+        <strong style="color: var(--accent);">💡 AUTOMATED AUTHENTICATION TIP:</strong> Instead of configuring Bearer
+        Tokens for individual requests, set it at the Collection level. Through Auth Inheritance, all child requests
+        inherit the authorization headers automatically.
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 7: API Authentication Testing Patterns -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>API Authentication Testing Patterns</h2>
+      <span class="sn">07 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card card-accent">
+          <h3 style="color: var(--accent); margin-bottom: 8px;">Common Auth Mechanisms</h3>
+          <ul class="bullet">
+            <li><strong>Bearer Token (JWT):</strong> Token generated by the server and sent in the Authorization Header.
+              Standard for SPA and Mobile apps.</li>
+            <li><strong>API Key:</strong> Static key passed via Header/Query.</li>
+            <li><strong>Basic Auth:</strong> Base64 encoded credentials sent directly.</li>
+            <li><strong>Session Cookie:</strong> Server maintains session, browser sends cookie automatically.</li>
+          </ul>
+        </div>
+        <div class="card card-green">
+          <h3 style="color: var(--green); margin-bottom: 8px;">EShop SUT Automation Workflow</h3>
+          <ul class="bullet">
+            <li class="green"><strong>Step 1:</strong> POST /api/login sends credentials to server.</li>
+            <li class="green"><strong>Step 2:</strong> Post-response script extracts token and auto-saves it in
+              <code>{{auth_token}}</code> environment variable.
+            </li>
+            <li class="green"><strong>Step 3:</strong> All protected child requests inherit from the Collection level
+              automatically (Auth Inheritance).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 8: Scripting in Postman -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Scripting (Pre-request vs. Post-response)</h2>
+      <span class="sn">08 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card card-accent">
+          <h3 style="color: var(--accent); margin-bottom: 8px;">Pre-request Scripts (Before sending)</h3>
+          <ul class="bullet" style="margin-bottom: 8px;">
+            <li><strong>Purpose:</strong> Prepare dynamic data or calculate inputs before the request is sent.</li>
+            <li><strong>Real-world Example:</strong> Generating a random email during `POST /api/register` to avoid
+              'Email already exists' errors:</li>
+          </ul>
+          <pre><code>const randomEmail = `test_${Math.floor(Math.random() * 10000)}@eshop.com`;
+pm.environment.set("email", randomEmail);</code></pre>
+          <p style="font-size: 0.8rem; color: var(--ink-3); font-style: italic; margin-top: 4px;">Then use `{{email}}`
+            directly in the Request Body JSON.</p>
+        </div>
+        <div class="card card-purple">
+          <h3 style="color: var(--purple); margin-bottom: 8px;">Post-response Scripts / Tests (After receiving)</h3>
+          <ul class="bullet" style="margin-bottom: 8px;">
+            <li class="purple"><strong>Purpose:</strong> Validate API response quality (assertions) and extract
+              variables for workflow chaining.</li>
+            <li class="purple"><strong>Variable Chaining:</strong> Extract login token and user ID to pass them to GET
+              Cart, POST Cart, and Checkout endpoints.</li>
+          </ul>
+          <pre><code>const responseData = pm.response.json();
+pm.test("Save Auth Token & User ID", function () {
+    pm.environment.set("auth_token", responseData.token);
+    pm.environment.set("user_id", responseData.user.id);
+});</code></pre>
+          <p style="font-size: 0.8rem; color: var(--ink-3); font-style: italic; margin-top: 4px;">* This will be
+            demonstrated live on Postman during the demo phase.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 9: Contract Testing with Postman -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Contract Testing with Postman (API Interface Validation)</h2>
+      <span class="sn">09 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-3">
+        <div class="card card-accent">
+          <h3 style="margin-bottom: 12px; color: var(--accent);">JSON Schema Validation</h3>
+          <p style="margin-bottom: 12px;">Postman integrates the Ajv Validator (v6.12.5) to support JSON Schema
+            draft-07.</p>
+          <p>Asserts key data types (<code>integer</code>, <code>string</code>), required fields, and format constraints
+            (<code>format: email</code>).</p>
+        </div>
+        <div class="card card-purple">
+          <h3 style="margin-bottom: 12px; color: var(--purple);">Structure Assertions</h3>
+          <p style="margin-bottom: 12px;">Validates other aspects of the API contract:</p>
+          <ul class="bullet">
+            <li class="purple"><strong>Status Code:</strong> Checks if the correct HTTP status is returned.</li>
+            <li class="purple"><strong>Headers:</strong> Verifies the response format (e.g.,
+              <code>application/json</code>).
+            </li>
+            <li class="purple"><strong>SLA Response:</strong> Ensures the API meets performance limits (&lt;800ms).</li>
+          </ul>
+        </div>
+        <div class="card card-green">
+          <h3 style="margin-bottom: 12px; color: var(--green);">Living Contracts</h3>
+          <p style="margin-bottom: 12px;">Save sample responses as Examples directly in Postman.</p>
+          <p>These Examples serve as the API documentation, which can spin up Postman Mock Servers for Frontend/Backend
+            decoupled development.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 10: Collection Runner & Newman CLI -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Collection Runner & Newman CLI (Automated Run)</h2>
+      <span class="sn">10 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card card-accent">
+          <h3 style="color: var(--accent); margin-bottom: 12px;">Collection Runner (GUI) & DDT</h3>
+          <ul class="bullet">
+            <li style="margin-bottom: 12px;"><strong>Automated Workflow Execution:</strong> Run the entire test folder
+              sequentially, configuring iterations and delays to simulate real user behavior.</li>
+            <li><strong>Data-Driven Testing (DDT):</strong> Instead of hardcoding credentials, feed an external CSV/JSON
+              file to run tests across multiple accounts and verify success/error paths.</li>
+          </ul>
+        </div>
+        <div class="card card-purple">
+          <h3 style="color: var(--purple); margin-bottom: 12px;">Newman CLI (Headless Terminal Run)</h3>
+          <ul class="bullet" style="margin-bottom: 6px;">
+            <li class="purple"><strong>Headless Execution:</strong> Newman runs exported collections and environments
+              directly from terminal:</li>
+          </ul>
+          <pre><code>newman run EShop_Collection.json \
+  -e EShop_Env.json -r cli,html</code></pre>
+          <ul class="bullet" style="margin-top: 6px;">
+            <li class="purple"><strong>Reporting Formats:</strong> Generate HTML reports for visual inspection or JUnit
+              XML reports for CI/CD dashboard integration (e.g., Jenkins, GitHub Actions).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 11: Postbot AI in Automated Test Generation -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Postbot AI in Automated Test Generation</h2>
+      <span class="sn">11 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card card-accent">
+          <h3>Interaction Flow</h3>
+          <ul class="bullet" style="margin-top: 6px;">
+            <li><strong>1.</strong> Send request to get sample response.</li>
+            <li><strong>2.</strong> Go to Tests tab and click 'Ask Postbot'.</li>
+            <li><strong>3.</strong> Type natural language prompt.</li>
+            <li><strong>4.</strong> Review and save assertions.</li>
+          </ul>
+        </div>
+        <div class="card card-green">
+          <h3>Custom Prompting Power</h3>
+          <p>To test complex calculations instead of basic types, write specific calculations:</p>
+          <p
+            style="background: var(--green-light); padding: 8px 12px; border-radius: 6px; font-style: italic; font-size: 0.85rem; color: var(--green); margin: 6px 0; border: 1px solid rgba(5,150,105,0.2);">
+            "Write a test that calculates expected discount as total_amount * 10 / 100 for a percent coupon, and asserts
+            discount_amount matches this calculation."
+          </p>
+          <p style="font-size: 0.8rem; color: var(--ink-3);">With custom guidance, Postbot writes logical code instead
+            of simple type checks.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 12: Limitations of Postbot AI -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Limitations of Postbot AI</h2>
+      <span class="sn">12 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-3">
+        <div class="card card-red">
+          <span class="tag tag-red">LIMIT 1</span>
+          <h3>Happy-Path Focus</h3>
+          <p>Postbot is heavily biased towards generating successful (status 200/201) tests. It completely misses
+            negative error paths and edge cases where business logic bugs usually reside.</p>
+        </div>
+        <div class="card card-red">
+          <span class="tag tag-red">LIMIT 2</span>
+          <h3>Sample Dependency</h3>
+          <p>AI works by analyzing the active sample response. If the request has not been run, or if the server is
+            down, Postbot cannot generate assertions.</p>
+        </div>
+        <div class="card card-red">
+          <span class="tag tag-red">LIMIT 3</span>
+          <h3>No Business Logic</h3>
+          <p>By default, AI only checks surface-level structure (strings, numbers). It cannot verify numerical
+            correctness or stateful business rules without custom prompts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 13: Failure Modes — 3 Ways Tools Mislead You -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Failure Modes — 3 Ways Tools Mislead You</h2>
+      <span class="sn">13 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-3">
+        <div class="card card-red">
+          <span class="tag tag-red">FM 1</span>
+          <h3>Bug Anchoring</h3>
+          <p>Postbot 'learns' and locks in server bugs instead of catching them. If the sample response has wrong
+            calculations (e.g., negative discount -4,500,000₫), Postbot writes tests validating this bug as correct
+            behavior.</p>
+        </div>
+        <div class="card card-red">
+          <span class="tag tag-red">FM 2</span>
+          <h3>Superficial Error Testing</h3>
+          <p>AI-generated error tests only check if the error property is a string, completely ignoring whether the
+            error message matches the actual business context or stateful limits.</p>
+        </div>
+        <div class="card card-red">
+          <span class="tag tag-red">FM 3</span>
+          <h3>Environment Mismatch</h3>
+          <p>Collection Runner's environment selector is separate from the main workspace. Mismatched active
+            environments cause variable resolution failures, which the Runner hides.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 14: Postman vs. Pact Comparison -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Postman vs. Pact Comparison (Contract Testing)</h2>
+      <span class="sn">14 / 16</span>
+    </div>
+    <div class="slide-content">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Comparison Aspect</th>
+            <th>Postman (Lightweight Contract)</th>
+            <th>Pact (Dedicated CDC Framework)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Target Architecture</strong></td>
+            <td>Monolith (EShop SUT), small to medium codebases</td>
+            <td>Highly distributed Microservices architecture</td>
+          </tr>
+          <tr>
+            <td><strong>Core Mechanism</strong></td>
+            <td>JSON Schema validation within post-response scripts</td>
+            <td>Contracts (.json) published to Pact Broker</td>
+          </tr>
+          <tr>
+            <td><strong>Setup & Infrastructure</strong></td>
+            <td>Extremely simple, no infrastructure required</td>
+            <td>Complex, requires Pact Broker host & mock frameworks</td>
+          </tr>
+          <tr>
+            <td><strong>Learning Curve</strong></td>
+            <td>Low, uses standard JavaScript/Chai.js scripts</td>
+            <td>High, requires understanding consumer-driven contract model</td>
+          </tr>
+          <tr style="background: var(--green-light);">
+            <td style="color: var(--green); font-weight: 700;">Verdict for SUT</td>
+            <td style="color: var(--green); font-weight: 700; background: rgba(5,150,105,0.1);">OPTIMAL CHOICE (Fits
+              EShop monolith scale)</td>
+            <td style="color: var(--red); font-weight: 700;">Overkill (Not needed for monolithic codebase)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="color: var(--ink-3); font-style: italic; font-size: clamp(0.78rem, 1vw, 0.9rem);">
+        * Verdict: Postman delivers quick interface validation at minimum cost for monolithic or independent development
+        teams.
+      </p>
+    </div>
+  </div>
+
+  <!-- Slide 15: Live Demo Preview -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>Live Demo Preview — Real-World Scenario</h2>
+      <span class="sn">15 / 16</span>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card card-green">
+          <h3 style="color: var(--green); margin-bottom: 8px;">E2E Integration Flow (Success Path)</h3>
+          <p style="font-weight: 600; margin-bottom: 8px;">Goal: Demonstrate variable chaining and flow execution via
+            Collection Runner:</p>
+          <ul class="bullet" style="margin-left: 8px; font-size: 0.9rem;">
+            <li class="green"><strong>1. Authentication</strong> (POST /api/login)<br>↳ Extracts and auto-saves token to
+              <code>{{auth_token}}</code>
+            </li>
+            <li class="green"><strong>2. View Product Details</strong> (GET /api/products/:id)<br>↳ Extracts product ID
+              dynamically</li>
+            <li class="green"><strong>3. Add to Cart</strong> (POST /api/cart)</li>
+            <li class="green"><strong>4. Checkout</strong> (POST /api/checkout)</li>
+          </ul>
+          <p style="margin-top: 8px; font-weight: 600; color: var(--green);">&rarr; Verifies that all endpoints return
+            matching schemas.</p>
+        </div>
+        <div class="card card-red">
+          <h3 style="color: var(--red); margin-bottom: 8px;">Bugs Captured via Negative Contract</h3>
+          <p style="font-weight: 600; margin-bottom: 8px;">Goal: Expose interface contract violations on EShop SUT using
+            edge cases:</p>
+          <ul class="bullet" style="margin-left: 8px; font-size: 0.9rem;">
+            <li class="red"><strong>Request:</strong> Retrieve nonexistent product <code>GET /api/products/999</code>
+            </li>
+            <li class="red"><strong>Expected Contract Behavior:</strong> Status code <code>404 Not Found</code> with a
+              structured error envelope.</li>
+            <li class="red"><strong>SUT Bug Detected:</strong> Returns <code>200 OK</code> with an empty response body,
+              representing a broken contract that could crash client apps.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 16: Key Takeaways & Q&A -->
+  <div class="slide slide-title-hero">
+    <div
+      style="position: absolute; top: clamp(24px, 4vh, 40px); right: clamp(40px, 6vw, 72px); font: 700 clamp(12px, 1.2vw, 15px) var(--font); color: var(--ink-3);">
+      16/16</div>
+    <div class="tag tag-green" style="margin-top: 10px;">SUMMARY</div>
+    <h1 style="margin-bottom: clamp(12px, 2vh, 24px); font-size: clamp(2rem, 4vw, 3rem);">Key Takeaways & Q&A</h1>
+    <div class="grid-3" style="margin-bottom: clamp(16px, 3vh, 32px); text-align: left; width: 100%;">
+      <div class="card card-accent">
+        <h3 style="color: var(--accent); margin-bottom: 8px;">Use Postman Right</h3>
+        <p>Go beyond manual API calls. Leverage pre-request/post-response scripts, runners, and Newman for complete
+          automation.</p>
+      </div>
+      <div class="card card-purple">
+        <h3 style="color: var(--purple); margin-bottom: 8px;">AI Limitations</h3>
+        <p>AI (Postbot) is great for boilerplate, but human testers are decisive for edge cases, business rules, and
+          negative tests.</p>
+      </div>
+      <div class="card card-green">
+        <h3 style="color: var(--green); margin-bottom: 8px;">API Contracts</h3>
+        <p>Contract tests prevent client-side crashes by validating data shapes between Frontend and Backend.</p>
+      </div>
+    </div>
+    <div class="callout"
+      style="background: var(--accent-light); max-width: 800px; border-radius: 8px; padding: clamp(16px, 2vh, 24px); text-align: center; border: 1.5px solid var(--accent);">
+      <h2
+        style="font-size: clamp(1.4rem, 2vw, 1.8rem); font-weight: 800; color: var(--ink); margin-bottom: 6px; letter-spacing: 0.05em;">
+        THANK YOU FOR LISTENING!</h2>
+      <div style="color: var(--ink-2); font-style: italic; font-weight: 500; font-size: clamp(0.85rem, 1.1vw, 1rem);">
+        Moving to Live Demo on Postman...</div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav">
+    <button id="prevBtn" onclick="go(-1)">&#9664; Prev</button>
+    <span id="counter">1 / 16</span>
+    <button id="nextBtn" onclick="go(1)">Next &#9654;</button>
+  </div>
+
+  <script>
+    let c = 0;
+    const S = document.querySelectorAll('.slide');
+    const T = S.length;
+
+    function show(n) {
+      S[c].classList.remove('active');
+      c = Math.max(0, Math.min(T - 1, n));
+      S[c].classList.add('active');
+      document.getElementById('counter').textContent = (c + 1) + ' / ' + T;
+      document.getElementById('prevBtn').disabled = c === 0;
+      document.getElementById('nextBtn').disabled = c === T - 1;
+    }
+
+    function go(d) {
+      show(c + d);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        go(1);
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        go(-1);
+      }
+    });
+
+    show(0);
+  </script>
+</body>
+
+</html>
