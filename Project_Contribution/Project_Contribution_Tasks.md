@@ -45,3 +45,10 @@
 | 37 | 23127462 | Nguyễn Minh Quang | Update login test data + Collection Runner & Newman usage guide | 5 | <img src="commit_evidence/commit_f694416.png" width="460"> |
 | 38 | 23127462 | Nguyễn Minh Quang | Replace Postman Runner results screenshot in User Guide | 2 | <img src="commit_evidence/commit_28fb9ad.png" width="460"> |
 | 39 | 23127462 | Nguyễn Minh Quang | Write personal AI usage disclosure & audit report | 2 | <img src="commit_evidence/commit_04aff01.png" width="460"> |
+| 40 | 23127047 | Lưu Huy Hoàng | Merge & consolidate team AI Audit Report into a single file | 2 | <img src="commit_evidence/commit_e922ffd.png" width="460"> |
+| 41 | 23127047 | Lưu Huy Hoàng | Prepare Project Contribution task list & score sheet | 1 | <img src="commit_evidence/commit_47cb1b3.png" width="460"><br><img src="commit_evidence/commit_00cdccd.png" width="460"> |
+| 42 | 23127047 | Lưu Huy Hoàng | Write Reflective Statement & personal AI Disclosure | 2 | <img src="commit_evidence/commit_9e5edc1.png" width="460"><br><img src="commit_evidence/commit_2cb7ecf.png" width="460"> |
+| 43 | 23127052 | Dương Gia Huy | Finalize Stage 8 documentation (personal AI Audit input & AI Disclosure PDF) | 5 | <img src="commit_evidence/commit_ac206bf.png" width="460"> |
+| 44 | 23127104 | Nguyễn Bình Minh Phương | Finalize Activity Worksheet for the audience activity | 5 | <img src="commit_evidence/commit_a9c8c7b.png" width="460"> |
+| 45 | 23127125 | Nguyễn Hiếu Thuận | Finalize & submit personal AI Disclosure (PDF version) | 5 | <img src="commit_evidence/commit_463e1bb.png" width="460"> |
+| 46 | 23127462 | Nguyễn Minh Quang | Finalize & submit personal AI Disclosure (PDF version) | 5 | <img src="commit_evidence/commit_78df971.png" width="460"> |
