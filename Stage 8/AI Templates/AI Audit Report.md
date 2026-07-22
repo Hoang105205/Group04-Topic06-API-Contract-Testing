@@ -889,8 +889,6 @@ Mỗi mục đều có cấu trúc Symptom → Cause → Solution kèm code/comm
 
 ## Thuận
 
-### User Guide – Contract Testing Part
-
 ## Entry 1
 
 ### AI tool name
