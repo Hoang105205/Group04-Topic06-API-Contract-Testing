@@ -16,7 +16,7 @@ title: 'Interactive Seminar Activity: Manual vs. AI-Assisted API Testing'
     ```
     *(The API server should be listening at: `http://localhost:3000`)*
 *   Open the **Postman** application.
-*   Ensure you have imported [Activity_Collection.json](EShop/demo-src/postman/Activity_Collection.json) and [Activity_Environment.json](EShop/demo-src/postman/Activity_Environment.json) from the `demo-src/postman/` directory.
+*   Ensure you have imported [Activity_Collection.json](demo-src/postman/Activity_Collection.json) and [Activity_Environment.json](demo-src/postman/Activity_Environment.json) from the `demo-src/postman/` directory.
 *   Set your active Postman environment to **"Activity Env"** (top-right selector).
 
 ### 2. Retrieve Authentication Token:
