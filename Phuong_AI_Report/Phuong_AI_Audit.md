@@ -108,7 +108,7 @@ Xác nhận phần của bạn đã có trong bản User_Guide.md cuối cùng. 
 Tóm gọn lại: bạn đang là người phụ trách "linh hồn" của phần AI trong đề tài này — chứng minh Postbot giỏi ở đâu, dở ở đâu, và cách nó có thể "lừa" người dùng nếu không cẩn thận. Nếu bạn muốn, mình có thể giúp bạn viết luôn bản nháp Section 5.3 hoặc Section 6 dựa trên khung này, hoặc dựng bảng so sánh mẫu để bạn điền số liệu thực tế vào.
 ```
 
-##Prompt 2
+## Prompt 2
 ### AI tool name
 Claude (Sonnet 5)
 
