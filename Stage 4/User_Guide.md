@@ -1,9 +1,9 @@
 # User Guide: API & Contract Testing with Postman & Postbot
 
 ## Demo Youtube Link
-[Link](https://youtu.be/EHq4QRIPkGk)
+[API and Contract Testing - Group 04](https://youtu.be/EHq4QRIPkGk)
 
-## Section 1: Introduction
+## Section 1: Introduction (23127047 - LƯU HUY HOÀNG)
 
 ### What is API Testing?
 
@@ -53,7 +53,7 @@ All examples in this guide use the **EShop SUT** (System Under Test) — a Node.
 
 ---
 
-## Section 2: Install & Setup
+## Section 2: Install & Setup (23127462 - NGUYỄN MINH QUANG)
 
 ### Installation
 
@@ -122,7 +122,7 @@ To verify that the setup is successful and the environment variables are active:
 
 ---
 
-## Section 3: First Test — Basic API Requests
+## Section 3: First Test — Basic API Requests (23127462 - NGUYỄN MINH QUANG)
 
 ### 4 Basic HTTP Methods
 
@@ -184,7 +184,7 @@ To verify that the setup is successful and the environment variables are active:
 
 This section walks you through how Postman handles authentication — specifically **JWT Bearer Token**, which is the auth mechanism used by the EShop SUT. You will learn how to configure auth once and let Postman propagate it everywhere, test auth failure scenarios, and automate token management so you never have to copy-paste tokens by hand.
 
-### 4.1 — Collections and Auth Inheritance
+### 4.1 — Collections and Auth Inheritance (23127047 - LƯU HUY HOÀNG)
 
 In Postman, a **Collection** is a group of related API requests. You should already have a collection with your requests imported from Section 2. Collections can also contain **sub-folders** to organize requests by feature area (e.g., "Auth", "Products", "Cart", "Orders"), making it easy to locate and run related requests together.
 
@@ -210,7 +210,7 @@ A key feature is **auth inheritance**: authorization settings applied at a paren
 
 > **Key takeaway:** You configure auth **once** at the collection level, and every request inside automatically includes the `Authorization: Bearer <token>` header. If you ever need to override auth for a specific request or folder, you can change its Type to something other than "Inherit auth from parent" — but for the EShop SUT, inheritance is all you need.
 
-### 4.2 — Testing Authentication with Bearer Token
+### 4.2 — Testing Authentication with Bearer Token (23127047 - LƯU HUY HOÀNG)
 
 The EShop SUT uses **JWT (JSON Web Token) Bearer Token** authentication. The flow works like this:
 
@@ -307,7 +307,7 @@ This confirms the full auth chain is working: login → token → inherited head
 
 > **Note:** Because the EShop SUT is designed to have bugs, the actual response for a fake or invalid token may be `403 Forbidden` instead of `401 Unauthorized`.
 
-### 4.3 — Eliminating Manual Token Management
+### 4.3 — Eliminating Manual Token Management (23127047 - LƯU HUY HOÀNG)
 
 #### The Problem
 
@@ -381,7 +381,7 @@ This is accomplished through a small piece of logic added to the login request's
 
 ---
 
-## Section 4b: Contract Testing with Postman
+## Section 4b: Contract Testing with Postman (23127125 - NGUYỄN HIẾU THUẬN)
 
 ### 4b.1 — What is Contract Testing?
 
@@ -600,16 +600,16 @@ For our monolithic EShop SUT, **Postman's built-in contract testing is the optim
 
 ## Section 5: Advanced Usage
 
-### 5.1a — Test Scripts
+### 5.1a — Test Scripts (23127052 - DƯƠNG GIA HUY)
 
-### Test Scripts in Postman
+**Test Scripts in Postman:**
 API testing requires more than just checking if a request returns a `200 OK` status. Postman allows testers to write JavaScript code to automate data preparation and validate complex API behaviors. 
 
 Think of these scripts as the automated logic surrounding your API calls. They are divided into two distinct execution phases:
 1. **Pre-request Scripts:** Code that executes *before* the HTTP request is sent to the server.
 2. **Post-response Scripts (Tests):** Code that executes *after* the HTTP response is received from the server.
 
-### How to Navigate to the Scripts Interface
+**How to Navigate to the Scripts Interface:**
 Before diving into the code, here is how you can locate the scripting workspace in Postman:
 1. Open any API request in your Collection.
 2. Look at the tab menu directly below the URL bar and click on the **Scripts** tab.
@@ -823,7 +823,7 @@ To help you write and understand scripts faster, here is a cheat sheet of the mo
 | `pm.expect(arr).to.be.an('array').that.is.not.empty` | Ensures the returned data is an array and contains at least one item. |
 | `pm.expect(time).to.be.below(800)` | Asserts that a numeric value is less than a specified target (great for performance testing). |
 
-### 5.1b — Negative Testing & Error Handling
+### 5.1b — Negative Testing & Error Handling (23127052 - DƯƠNG GIA HUY)
 
 Happy-path testing (verifying that valid inputs yield successful outputs) only covers a fraction of your API's contract. Negative Testing involves intentionally sending invalid, malformed, or unauthorized data to see how the system reacts.
 
@@ -952,7 +952,7 @@ pm.test("Login must be successful to continue workflow", function () {
 
 *Note: The `pm.execution.setNextRequest()` function only controls the execution flow when running tests via the Collection Runner. If you send the request individually using the regular Send button, this command is ignored.*
 
-### 5.2 — Collection Runner & Newman CLI
+### 5.2 — Collection Runner & Newman CLI (23127462 - NGUYỄN MINH QUANG)
 
 #### Collection Runner (GUI)
 The Collection Runner allows you to run your entire Postman Collection in a specified sequence. This is essential for testing a complete integration workflow (for example, the E-commerce integration flow: Login → Retrieve Products → Add to Cart → Place Order) to ensure variable chaining works seamlessly as an end-to-end integration test instead of isolated request executions.
@@ -1062,7 +1062,7 @@ Data-driven testing allows you to run a single request (or the entire flow) mult
    ```
 
 
-### 5.3 — Postbot: AI-Generated Tests
+### 5.3 — Postbot: AI-Generated Tests (23127104 - NGUYỄN BÌNH MINH PHƯƠNG)
 
 #### 5.3.1. What is Postbot?
 
@@ -1129,13 +1129,13 @@ Postbot is a solid tool for quickly writing structural tests (schema, data types
 
 ---
 
-## Section 6: Failure Modes
+## Section 6: Failure Modes (23127104 - NGUYỄN BÌNH MINH PHƯƠNG)
 
 This section presents 3 systemic "failure modes" identified through hands-on testing of Postbot on the EShop SUT system, primarily via the `POST /api/apply-coupon` endpoint.
 
 ---
 
-## 6.1. FM1 — Anchoring on a Buggy Sample Response ("Learning the Bug Instead of Catching It")
+### 6.1. FM1 — Anchoring on a Buggy Sample Response ("Learning the Bug Instead of Catching It")
 
 **Description:**
 In default mode (no additional guidance), Postbot only looks at the one sample response currently displayed to infer its assertions. If that sample response contains a bug, Postbot will write a test that **confirms the bug as correct behavior**, instead of cross-checking it against actual business logic.
@@ -1170,7 +1170,7 @@ All 8/8 tests Postbot generated passed (green), giving the impression the API wo
 
 ---
 
-## 6.2. FM2 — Happy-Path Only / Superficial Error-Case Tests
+### 6.2. FM2 — Happy-Path Only / Superficial Error-Case Tests
 
 **Description:**
 Postbot can generate a separate branch for error responses (based on status code), but these assertions only check **surface-level structure** — that an error field exists, is a string, is non-empty — without checking whether **the error content actually matches the specific business context**. In addition, Postbot cannot test constraints that depend on **state/history** (stateful business rules), since it only analyzes one request-response at a time.
@@ -1199,7 +1199,7 @@ If the backend has a logic bug (e.g. accidentally swapping the "expired" message
 
 ---
 
-## 6.3. FM3 — Collection Runner Hides the Root Cause
+### 6.3. FM3 — Collection Runner Hides the Root Cause
 
 **Description:**
 When running requests through the Collection Runner, error messages shown are usually limited to a status code and a generic assertion message, without explaining the root cause. More notably: the Collection Runner has an environment selector that is **independent** from the environment dropdown on the main Postman screen — if the correct environment isn't selected inside the Runner window itself, all variables (`{{auth_token}}`, `{{base_url}}`...) will fail to resolve when sending the request, causing the request to actually be malformed while the Runner gives no warning about this.
@@ -1225,13 +1225,13 @@ Testers can easily misattribute the error to an authentication/authorization iss
 
 ---
 
-## Overall Summary
+### Overall Summary
 
 All three failure modes above point to one common theme: Postbot (and AI-generated tests in general) performs well at the level of **data structure** (types, field existence, status codes) but cannot independently reason about **business logic** or **stateful/historical context**. The tester's role remains irreplaceable: understanding the specification, knowing the expected correct behavior in advance, and actively verifying rather than blindly trusting AI output.
 
 ---
 
-## Section 7: Troubleshooting
+## Section 7: Troubleshooting (23127462 - NGUYỄN MINH QUANG)
 
 This section covers the most common errors you will encounter when working with Postman, Postbot, and Newman — along with their causes and solutions.
 
@@ -1373,7 +1373,7 @@ error: reporter "html" could not be loaded
 
 ---
 
-## Section 8: References
+## Section 8: References (23127047 - LƯU HUY HOÀNG)
 
 ### Official Documentation
 
